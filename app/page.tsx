@@ -1,6 +1,7 @@
 import AppIcon from "@/components/common/AppIcon";
 import config from "@/config";
 import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/common/ModeToggle";
 
 export default function Home() {
   return (
@@ -14,9 +15,12 @@ export default function Home() {
             </span>
           </div>
 
-          <Button className="rounded-full px-5">
-            Connect Wallet
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="rounded-full px-5">
+              Connect Wallet
+            </Button>
+            <ModeToggle />
+          </div>
         </div>
       </header>
 
