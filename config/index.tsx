@@ -3,9 +3,12 @@ export default {
     appDescription: "Visual Programmable Payment Workflows with",
     appDescriptionSuffix: "MNEE",
     appDetailedDescription: {
-        primary: "PayFlow is a visual workflow builder that lets users create automated payment flows without writing code",
-        secondary: `Think of it as "Zapier for payments" — you drag and drop conditions, approvals, and payment actions to create self-executing financial workflows.`
+      primary:
+        "Build complex payment logic visually. Ship it instantly.",
+      secondary:
+        "A visual layer for designing and executing programmable payment workflows."
     },
     appLogo: "/logo.png",
     appLogoAlt: "PayFlow Logo",
-}
+  };
+  
