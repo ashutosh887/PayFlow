@@ -14,7 +14,7 @@ export default function Home() {
             </span>
           </div>
 
-          <Button variant="outline" className="rounded-full px-5">
+          <Button className="rounded-full px-5">
             Connect Wallet
           </Button>
         </div>
