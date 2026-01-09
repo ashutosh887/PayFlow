@@ -19,7 +19,10 @@ export default function Home() {
             <Button variant="outline" className="rounded-full px-5">
               Connect Wallet
             </Button>
-            <ModeToggle />
+
+            <div className="hidden md:block">
+              <ModeToggle />
+            </div>
           </div>
         </div>
       </header>
@@ -28,8 +31,11 @@ export default function Home() {
         <div className="w-full max-w-7xl text-center">
           <div className="max-w-3xl mx-auto space-y-5">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.15] md:leading-[1.1] select-none">
-              {config.appDescription}{" "}
-              <span className="bg-clip-text text-transparent bg-linear-to-r from-amber-400 to-amber-600 whitespace-nowrap select-none">
+              <span className="block">
+                {config.appDescription}
+              </span>
+
+              <span className="block text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-amber-400 to-amber-600">
                 {config.appDescriptionSuffix}
               </span>
             </h1>
