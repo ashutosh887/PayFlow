@@ -1,8 +1,11 @@
 export default {
     appName: "PayFlow",
-    appDescription: "Visual Programmable Payment Workflows with MNEE",
+    appDescription: "Visual Programmable Payment Workflows with",
+    appDescriptionSuffix: "MNEE",
     appDetailedDescription: {
-        primary: "PayFlow is a visual workflow builder that lets users create automated MNEE payment flows without writing code",
+        primary: "PayFlow is a visual workflow builder that lets users create automated payment flows without writing code",
         secondary: `Think of it as "Zapier for payments" — you drag and drop conditions, approvals, and payment actions to create self-executing financial workflows.`
-    }
+    },
+    appLogo: "/logo.png",
+    appLogoAlt: "PayFlow Logo",
 }

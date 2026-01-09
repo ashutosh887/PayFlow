@@ -1,12 +1,12 @@
+import AppIcon from "@/components/common/AppIcon";
 import config from "@/config";
-import Image from "next/image";
 
 export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center h-screen space-y-4">
-      <Image src="/logo.png" alt="PayFlow Logo" width={100} height={100} className="select-none pointer-events-none" />
+      <AppIcon dimension={100} />
       <h1 className="text-4xl font-bold">{config.appName}</h1>
-      <p className="text-lg text-gray-500">{config.appDescription}</p>
+      <p className="text-lg text-gray-500">{config.appDescription} <span className="bg-clip-text text-transparent bg-linear-to-r from-amber-400 to-amber-600 whitespace-nowrap">{config.appDescriptionSuffix}</span></p>
     </div>
   );
 }
