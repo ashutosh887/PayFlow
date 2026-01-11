@@ -1,25 +1,51 @@
-import AppIcon from "@/components/common/AppIcon";
+"use client"
+
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import Image from "next/image"
 import config from "@/config";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/common/ModeToggle";
+import { ConnectWallet } from "@/components/common/ConnectWallet";
+import Link from "next/link";
+import { useSafeAccount } from "@/hooks/useSafeAccount";
+
+export const dynamic = 'force-dynamic'
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false)
+  const router = useRouter()
+  const { isConnected } = useSafeAccount()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (mounted && isConnected) {
+      router.push('/app')
+    }
+  }, [mounted, isConnected, router])
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="w-full flex justify-center">
         <div className="w-full max-w-7xl flex items-center justify-between px-6 py-5">
           <div className="flex items-center gap-3">
-            <AppIcon dimension={34} />
+            <Image
+              src={config.appLogo}
+              alt={config.appLogoAlt}
+              width={34}
+              height={34}
+              className="select-none"
+            />
             <span className="text-base font-semibold tracking-tight select-none">
               {config.appName}
             </span>
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="rounded-full px-5">
-              Connect Wallet
-            </Button>
-
+            <ConnectWallet />
             <div className="hidden md:block">
               <ModeToggle />
             </div>
@@ -35,7 +61,7 @@ export default function Home() {
                 {config.appDescription}
               </span>
 
-              <span className="block text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-amber-400 to-amber-600">
+              <span className="block text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-amber-600">
                 {config.appDescriptionSuffix}
               </span>
             </h1>
@@ -45,9 +71,11 @@ export default function Home() {
             </p>
 
             <div className="flex items-center justify-center gap-4 pt-4">
-              <Button size="lg" className="rounded-full px-8">
-                Get Started
-              </Button>
+              <Link href="/app">
+                <Button size="lg" className="rounded-full px-8">
+                  Get Started
+                </Button>
+              </Link>
 
               <Button size="lg" variant="outline" className="rounded-full px-8">
                 View Demo
