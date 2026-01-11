@@ -1,5 +1,4 @@
-import Image from "next/image";
-import config from "@/config";
+import { Workflow } from "lucide-react";
 
 type Props = {
   dimension: number;
@@ -7,11 +6,8 @@ type Props = {
 
 export default function AppIcon({ dimension }: Props) {
   return (
-    <Image
-      src={config.appLogo}
-      alt={config.appLogoAlt}
-      width={dimension}
-      height={dimension}
+    <Workflow 
+      size={dimension}
       className="select-none pointer-events-none"
     />
   );
