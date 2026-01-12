@@ -19,8 +19,8 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useFlowData, usePauseFlow, useResumeFlow, useCancelFlow, useAddMilestone } from '@/hooks/usePaymentFlow'
-import { formatUnits } from 'viem'
+import { useFlowData, usePauseFlow, useResumeFlow, useCancelFlow, useAddMilestone, useAddSplit, useExecuteSplitPayment, useFlowSplits } from '@/hooks/usePaymentFlow'
+import { formatUnits, parseUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { useState, useEffect } from 'react'
 import { useReadContract } from 'wagmi'
@@ -40,11 +40,18 @@ export default function FlowDetailsPage({
   const [showAddMilestone, setShowAddMilestone] = useState(false)
   const [newMilestoneAmount, setNewMilestoneAmount] = useState('')
   const [newMilestoneRecipient, setNewMilestoneRecipient] = useState('')
+  
+  const [showAddSplit, setShowAddSplit] = useState(false)
+  const [newSplitRecipient, setNewSplitRecipient] = useState('')
+  const [newSplitPercentage, setNewSplitPercentage] = useState('')
 
   const { pause, isPending: isPendingPause, isSuccess: isPauseSuccess } = usePauseFlow(flowAddress)
   const { resume, isPending: isPendingResume, isSuccess: isResumeSuccess } = useResumeFlow(flowAddress)
   const { cancel, isPending: isPendingCancel, isSuccess: isCancelSuccess } = useCancelFlow(flowAddress)
   const { addMilestone, isPending: isPendingAdd, isSuccess: isAddSuccess } = useAddMilestone(flowAddress)
+  const { addSplit, isPending: isPendingAddSplit, isSuccess: isAddSplitSuccess } = useAddSplit(flowAddress)
+  const { executeSplit, isPending: isPendingExecuteSplit, isSuccess: isExecuteSplitSuccess } = useExecuteSplitPayment(flowAddress)
+  const { splitCount } = useFlowSplits(flowAddress)
 
   useEffect(() => {
     if (milestoneCount > 0) {
@@ -93,6 +100,34 @@ export default function FlowDetailsPage({
       setShowAddMilestone(false)
     } catch (err) {
       console.error('Error adding milestone:', err)
+    }
+  }
+
+  const handleAddSplit = async () => {
+    if (!newSplitRecipient || !newSplitPercentage) {
+      return
+    }
+
+    const percentage = parseFloat(newSplitPercentage)
+    if (percentage <= 0 || percentage > 100) {
+      return
+    }
+
+    try {
+      await addSplit(newSplitRecipient as `0x${string}`, percentage)
+      setNewSplitRecipient('')
+      setNewSplitPercentage('')
+      setShowAddSplit(false)
+    } catch (err) {
+      console.error('Error adding split:', err)
+    }
+  }
+
+  const handleExecuteSplit = async () => {
+    try {
+      await executeSplit()
+    } catch (err) {
+      console.error('Error executing split:', err)
     }
   }
 
@@ -273,6 +308,112 @@ export default function FlowDetailsPage({
                     <Badge variant="outline">Pending</Badge>
                   </div>
                 ))}
+              </div>
+            )}
+          </Card>
+        )}
+
+        {flowType === 1 && (
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Revenue Splits</h2>
+              {isOwner && status === 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddSplit(!showAddSplit)}
+                >
+                  Add Split
+                </Button>
+              )}
+            </div>
+
+            {showAddSplit && (
+              <Card className="p-4 mb-4 bg-muted/50">
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="split-recipient">Recipient Address</Label>
+                    <Input
+                      id="split-recipient"
+                      type="text"
+                      placeholder="0x..."
+                      value={newSplitRecipient}
+                      onChange={(e) => setNewSplitRecipient(e.target.value)}
+                      className="mt-1 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="split-percentage">Percentage (1-100)</Label>
+                    <Input
+                      id="split-percentage"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      max="100"
+                      placeholder="50"
+                      value={newSplitPercentage}
+                      onChange={(e) => setNewSplitPercentage(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleAddSplit}
+                      disabled={isPendingAddSplit || !newSplitRecipient || !newSplitPercentage}
+                      size="sm"
+                    >
+                      {isPendingAddSplit ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        'Add Split'
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowAddSplit(false)
+                        setNewSplitRecipient('')
+                        setNewSplitPercentage('')
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {splitCount === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No splits configured yet. Add recipients to split payments.</p>
+              </div>
+            ) : (
+              <div className="space-y-3 mb-4">
+                <div className="text-sm text-muted-foreground">
+                  {splitCount} split recipient(s) configured
+                </div>
+                {isOwner && status === 0 && remainingAmount > 0n && (
+                  <Button
+                    onClick={handleExecuteSplit}
+                    disabled={isPendingExecuteSplit}
+                    className="w-full"
+                  >
+                    {isPendingExecuteSplit ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Executing...
+                      </>
+                    ) : (
+                      <>
+                        Execute Split Payment
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             )}
           </Card>
