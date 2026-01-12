@@ -18,7 +18,6 @@ export function useCreateMilestoneFlow() {
 
     const depositAmount = initialDeposit ? parseUnits(initialDeposit, 18) : 0n
 
-    // First approve the token transfer if deposit > 0
     if (depositAmount > 0n) {
       writeContract({
         address: CONTRACT_ADDRESSES.MNEE_TOKEN,
@@ -27,13 +26,10 @@ export function useCreateMilestoneFlow() {
         args: [CONTRACT_ADDRESSES.FLOW_FACTORY, depositAmount],
       })
       
-      // Wait a bit for approval to be processed
       await new Promise((resolve) => {
         setTimeout(resolve, 2000)
       })
     }
-
-    // Then create the flow
     writeContract({
       address: CONTRACT_ADDRESSES.FLOW_FACTORY,
       abi: FLOW_FACTORY_ABI,

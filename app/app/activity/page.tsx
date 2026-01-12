@@ -26,7 +26,6 @@ export default function ActivityPage() {
   const { address, isConnected } = useAccount()
   const [activities, setActivities] = useState<ActivityItem[]>([])
 
-  // Watch for FlowCreated events
   useWatchContractEvent({
     address: CONTRACT_ADDRESSES.FLOW_FACTORY,
     abi: FLOW_FACTORY_ABI,
@@ -49,9 +48,6 @@ export default function ActivityPage() {
     },
     enabled: isConnected && !!CONTRACT_ADDRESSES.FLOW_FACTORY,
   })
-
-  // Watch for PaymentExecuted events (would need to watch all user flows)
-  // For now, we'll show a message about activity tracking
 
   if (!isConnected) {
     return (

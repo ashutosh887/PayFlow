@@ -16,7 +16,6 @@ import { useEffect, useState } from 'react'
 import { ContractDeploymentNotice } from '@/components/common/ContractDeploymentNotice'
 import { areContractsDeployed } from '@/lib/contracts'
 
-// Helper component to fetch and display flow data
 function FlowCardWrapper({ flowAddress }: { flowAddress: string }) {
   const { status, totalAmount, remainingAmount, flowType, isLoading } = useFlowData(
     flowAddress as `0x${string}`
@@ -64,14 +63,10 @@ export default function DashboardPage() {
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([])
 
   useEffect(() => {
-    // Refetch flows when address changes
     if (isConnected && address) {
       refetch()
     }
   }, [address, isConnected, refetch])
-
-  // For now, approvals will be empty - we can implement event listening later
-  // or create a separate service to track approvals
 
   return (
     <div className="w-full">

@@ -23,13 +23,12 @@ export function Web3Provider({
 }) {
   const [queryClient] = useState(() => new QueryClient())
   const [mounted, setMounted] = useState(false)
-  const config = getWagmiConfig() // Always get config, even during SSR
+  const config = getWagmiConfig()
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Always provide WagmiProvider, but only add RainbowKit after mount
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>

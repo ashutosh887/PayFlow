@@ -42,7 +42,6 @@ export default function ApprovalPageRoute({
   }
 
   const handleReject = () => {
-    // Rejection logic would go here if implemented in the contract
     router.push('/app')
   }
 

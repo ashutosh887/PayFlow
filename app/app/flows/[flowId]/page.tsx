@@ -46,14 +46,11 @@ export default function FlowDetailsPage({
   const { cancel, isPending: isPendingCancel, isSuccess: isCancelSuccess } = useCancelFlow(flowAddress)
   const { addMilestone, isPending: isPendingAdd, isSuccess: isAddSuccess } = useAddMilestone(flowAddress)
 
-  // Fetch milestones
   useEffect(() => {
     if (milestoneCount > 0) {
       const fetchMilestones = async () => {
         const milestoneData = []
         for (let i = 0; i < milestoneCount; i++) {
-          // We'll need to fetch these individually or use multicall
-          // For now, we'll show placeholder data
           milestoneData.push({
             id: i,
             amount: 0n,
