@@ -17,16 +17,6 @@ export function useCreateMilestoneFlow() {
     }
 
     const depositAmount = initialDeposit ? parseUnits(initialDeposit, 18) : 0n
-
-    if (depositAmount > 0n) {
-      writeContract({
-        address: CONTRACT_ADDRESSES.MNEE_TOKEN,
-        abi: MNEE_TOKEN_ABI,
-        functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.FLOW_FACTORY, depositAmount],
-        gas: 100000n,
-      })
-    }
     
     writeContract({
       address: CONTRACT_ADDRESSES.FLOW_FACTORY,
@@ -59,16 +49,6 @@ export function useCreateSplitFlow() {
 
     const depositAmount = initialDeposit ? parseUnits(initialDeposit, 18) : 0n
 
-    if (depositAmount > 0n) {
-      writeContract({
-        address: CONTRACT_ADDRESSES.MNEE_TOKEN,
-        abi: MNEE_TOKEN_ABI,
-        functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.FLOW_FACTORY, depositAmount],
-        gas: 100000n,
-      })
-    }
-
     writeContract({
       address: CONTRACT_ADDRESSES.FLOW_FACTORY,
       abi: FLOW_FACTORY_ABI,
@@ -99,16 +79,6 @@ export function useCreateRecurringFlow() {
     }
 
     const depositAmount = initialDeposit ? parseUnits(initialDeposit, 18) : 0n
-
-    if (depositAmount > 0n) {
-      writeContract({
-        address: CONTRACT_ADDRESSES.MNEE_TOKEN,
-        abi: MNEE_TOKEN_ABI,
-        functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.FLOW_FACTORY, depositAmount],
-        gas: 100000n,
-      })
-    }
 
     writeContract({
       address: CONTRACT_ADDRESSES.FLOW_FACTORY,

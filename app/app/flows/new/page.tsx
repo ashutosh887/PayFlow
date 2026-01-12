@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -205,9 +204,13 @@ export default function CreateFlowPage() {
                 onChange={(e) => setInitialDeposit(e.target.value)}
                 className="mt-1"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Optional. You can add more funds after creation.
-              </p>
+              <div className="mt-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <p className="text-xs text-blue-600 font-medium mb-1">💡 Recommended Workflow</p>
+                <p className="text-xs text-blue-600/80">
+                  Create flow with <strong>0 deposit</strong> first, then deposit funds separately after creation. 
+                  This avoids transaction timing issues and is more reliable.
+                </p>
+              </div>
             </div>
 
             {error && (
