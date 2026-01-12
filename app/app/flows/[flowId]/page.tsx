@@ -20,10 +20,12 @@ import {
 import Link from 'next/link'
 import { useFlowData, usePauseFlow, useResumeFlow, useCancelFlow, useAddMilestone, useAddSplit, useExecuteSplitPayment, useFlowSplits, useDepositToFlow, useMarkMilestoneComplete, useExecuteMilestonePayment } from '@/hooks/usePaymentFlow'
 import { formatUnits } from 'viem'
-import { useAccount } from 'wagmi'
+import { useAccount, useChainId } from 'wagmi'
 import { useState, useEffect } from 'react'
 import { useFlowMilestone, useFlowSplit } from '@/hooks/useFlowMilestones'
 import { useToast } from '@/lib/toast'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { ExternalLink } from 'lucide-react'
 
 export default function FlowDetailsPage({
   params,
@@ -31,8 +33,10 @@ export default function FlowDetailsPage({
   params: { flowId: string }
 }) {
   const { address } = useAccount()
+  const chainId = useChainId()
   const { showToast } = useToast()
   const flowAddress = params.flowId as `0x${string}`
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
   const { status, totalAmount, remainingAmount, flowType, owner, milestoneCount, isLoading } =
     useFlowData(flowAddress)
 
@@ -44,15 +48,15 @@ export default function FlowDetailsPage({
   const [newSplitRecipient, setNewSplitRecipient] = useState('')
   const [newSplitPercentage, setNewSplitPercentage] = useState('')
 
-  const { pause, isPending: isPendingPause } = usePauseFlow(flowAddress)
-  const { resume, isPending: isPendingResume } = useResumeFlow(flowAddress)
-  const { cancel, isPending: isPendingCancel } = useCancelFlow(flowAddress)
-  const { addMilestone, isPending: isPendingAdd, isSuccess: isAddSuccess } = useAddMilestone(flowAddress)
-  const { addSplit, isPending: isPendingAddSplit, isSuccess: isAddSplitSuccess } = useAddSplit(flowAddress)
-  const { executeSplit, isPending: isPendingExecuteSplit } = useExecuteSplitPayment(flowAddress)
-  const { deposit, isPending: isPendingDeposit, isSuccess: isDepositSuccess } = useDepositToFlow(flowAddress)
-  const { markComplete, isPending: isPendingMark, isSuccess: isMarkSuccess } = useMarkMilestoneComplete(flowAddress)
-  const { executePayment, isPending: isPendingExecute, isSuccess: isExecuteSuccess } = useExecuteMilestonePayment(flowAddress)
+  const { pause, isPending: isPendingPause, hash: pauseHash } = usePauseFlow(flowAddress)
+  const { resume, isPending: isPendingResume, hash: resumeHash } = useResumeFlow(flowAddress)
+  const { cancel, isPending: isPendingCancel, hash: cancelHash, isSuccess: isCancelSuccess } = useCancelFlow(flowAddress)
+  const { addMilestone, isPending: isPendingAdd, isSuccess: isAddSuccess, hash: addMilestoneHash } = useAddMilestone(flowAddress)
+  const { addSplit, isPending: isPendingAddSplit, isSuccess: isAddSplitSuccess, hash: addSplitHash } = useAddSplit(flowAddress)
+  const { executeSplit, isPending: isPendingExecuteSplit, hash: executeSplitHash } = useExecuteSplitPayment(flowAddress)
+  const { deposit, isPending: isPendingDeposit, isSuccess: isDepositSuccess, hash: depositHash } = useDepositToFlow(flowAddress)
+  const { markComplete, isPending: isPendingMark, isSuccess: isMarkSuccess, hash: markHash } = useMarkMilestoneComplete(flowAddress)
+  const { executePayment, isPending: isPendingExecute, isSuccess: isExecuteSuccess, hash: executeHash } = useExecuteMilestonePayment(flowAddress)
   const { splitCount } = useFlowSplits(flowAddress)
   
   const [showDeposit, setShowDeposit] = useState(false)
@@ -178,6 +182,22 @@ export default function FlowDetailsPage({
       })
     }
   }
+
+  function getExplorerUrl(hash: string) {
+    if (chainId === 11155111) return `https://sepolia.etherscan.io/tx/${hash}`
+    return `https://etherscan.io/tx/${hash}`
+  }
+
+  useEffect(() => {
+    if (isCancelSuccess && cancelHash) {
+      showToast({
+        type: 'success',
+        title: 'Flow cancelled',
+        description: 'Remaining funds have been refunded',
+      })
+      setShowCancelDialog(false)
+    }
+  }, [isCancelSuccess, cancelHash, showToast])
 
   const handleExecuteSplit = async () => {
     try {
@@ -674,24 +694,79 @@ export default function FlowDetailsPage({
               </Button>
             )}
             {(status === 0 || status === 1) && (
-              <Button
-                variant="outline"
-                className="text-destructive"
-                onClick={() => cancel()}
-                disabled={isPendingCancel}
-              >
-                {isPendingCancel ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Cancelling...
-                  </>
-                ) : (
-                  <>
+              <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="text-destructive"
+                    disabled={isPendingCancel}
+                  >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Cancel Flow
-                  </>
-                )}
-              </Button>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel Payment Flow</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Cancelling this flow will:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Permanently stop all future payments</li>
+                        <li>Refund all remaining funds to you</li>
+                        <li>Mark all incomplete milestones as cancelled</li>
+                      </ul>
+                      <p className="mt-3 font-medium">This action cannot be undone.</p>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep Flow</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => cancel()}
+                      disabled={isPendingCancel}
+                      className="bg-destructive text-destructive-foreground"
+                    >
+                      {isPendingCancel ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Cancelling...
+                        </>
+                      ) : (
+                        'Cancel Flow'
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            {pauseHash && (
+              <a
+                href={getExplorerUrl(pauseHash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+              >
+                View transaction <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+            {resumeHash && (
+              <a
+                href={getExplorerUrl(resumeHash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+              >
+                View transaction <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+            {cancelHash && (
+              <a
+                href={getExplorerUrl(cancelHash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+              >
+                View transaction <ExternalLink className="h-3 w-3" />
+              </a>
             )}
           </div>
         )}
@@ -700,7 +775,77 @@ export default function FlowDetailsPage({
           <Card className="p-4 bg-yellow-500/10 border-yellow-500/20">
             <div className="flex items-center gap-2 text-yellow-600">
               <AlertCircle className="h-4 w-4" />
-              <span className="text-sm">You are not the owner of this flow</span>
+              <span className="text-sm">You are not the owner of this flow. You can view details but cannot make changes.</span>
+            </div>
+          </Card>
+        )}
+
+        {(depositHash || addMilestoneHash || addSplitHash || executeSplitHash || markHash || executeHash) && (
+          <Card className="p-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Recent Transactions</p>
+              <div className="space-y-1">
+                {depositHash && (
+                  <a
+                    href={getExplorerUrl(depositHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  >
+                    Deposit <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+                {addMilestoneHash && (
+                  <a
+                    href={getExplorerUrl(addMilestoneHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  >
+                    Add Milestone <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+                {addSplitHash && (
+                  <a
+                    href={getExplorerUrl(addSplitHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  >
+                    Add Split <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+                {executeSplitHash && (
+                  <a
+                    href={getExplorerUrl(executeSplitHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  >
+                    Execute Split <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+                {markHash && (
+                  <a
+                    href={getExplorerUrl(markHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  >
+                    Mark Complete <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+                {executeHash && (
+                  <a
+                    href={getExplorerUrl(executeHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  >
+                    Execute Payment <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
             </div>
           </Card>
         )}

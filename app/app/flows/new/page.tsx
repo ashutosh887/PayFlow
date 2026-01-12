@@ -15,13 +15,14 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { useCreateMilestoneFlow, useCreateSplitFlow, useCreateRecurringFlow } from '@/hooks/useFlowFactory'
-import { useAccount, usePublicClient, useWatchContractEvent } from 'wagmi'
+import { useAccount, usePublicClient, useWatchContractEvent, useChainId } from 'wagmi'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useToast } from '@/lib/toast'
 import { setFlowMetadata } from '@/lib/flowMetadata'
 import { Textarea } from '@/components/ui/textarea'
 import { CONTRACT_ADDRESSES, FLOW_FACTORY_ABI } from '@/lib/contracts'
+import { ExternalLink } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,13 +47,16 @@ export default function CreateFlowPage() {
   const [isDeploying, setIsDeploying] = useState(false)
   const [deployError, setDeployError] = useState<string | null>(null)
   const [createdFlowAddress, setCreatedFlowAddress] = useState<string | null>(null)
+  const [txHash, setTxHash] = useState<string | null>(null)
   const publicClient = usePublicClient()
+  const chainId = useChainId()
 
   const {
     createFlow: createMilestoneFlow,
     isPending: isPendingMilestone,
     isSuccess: isSuccessMilestone,
     error: errorMilestone,
+    hash: hashMilestone,
   } = useCreateMilestoneFlow()
 
   const {
@@ -60,6 +64,7 @@ export default function CreateFlowPage() {
     isPending: isPendingSplit,
     isSuccess: isSuccessSplit,
     error: errorSplit,
+    hash: hashSplit,
   } = useCreateSplitFlow()
 
   const {
@@ -67,11 +72,24 @@ export default function CreateFlowPage() {
     isPending: isPendingRecurring,
     isSuccess: isSuccessRecurring,
     error: errorRecurring,
+    hash: hashRecurring,
   } = useCreateRecurringFlow()
 
   const isPending = isPendingMilestone || isPendingSplit || isPendingRecurring || isDeploying
   const isSuccess = isSuccessMilestone || isSuccessSplit || isSuccessRecurring
   const error = errorMilestone || errorSplit || errorRecurring
+  const currentHash = hashMilestone || hashSplit || hashRecurring
+
+  useEffect(() => {
+    if (currentHash) {
+      setTxHash(currentHash)
+    }
+  }, [currentHash])
+
+  function getExplorerUrl(hash: string) {
+    if (chainId === 11155111) return `https://sepolia.etherscan.io/tx/${hash}`
+    return `https://etherscan.io/tx/${hash}`
+  }
 
   // Watch for FlowCreated event to get the flow address and save metadata
   useWatchContractEvent({
@@ -163,6 +181,16 @@ export default function CreateFlowPage() {
             <p className="text-muted-foreground">
               Your payment flow has been deployed to the blockchain.
             </p>
+            {txHash && (
+              <a
+                href={getExplorerUrl(txHash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 justify-center mt-2"
+              >
+                View transaction <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
             <div className="pt-4">
               <Link href="/app">
                 <Button>View Dashboard</Button>
@@ -257,6 +285,9 @@ export default function CreateFlowPage() {
                 disabled={isPending}
                 className="mt-1"
               />
+              {!flowName.trim() && flowName.length > 0 && (
+                <p className="text-xs text-destructive mt-1">Flow name is required</p>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
                 Give your flow a memorable name to easily identify it later
               </p>
@@ -281,12 +312,21 @@ export default function CreateFlowPage() {
                 id="deposit"
                 type="number"
                 step="0.01"
+                min="0"
                 placeholder="0.00"
                 value={initialDeposit}
-                onChange={(e) => setInitialDeposit(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (val === '' || (!isNaN(Number(val)) && Number(val) >= 0)) {
+                    setInitialDeposit(val)
+                  }
+                }}
                 disabled={isPending}
                 className="mt-1"
               />
+              {initialDeposit && (isNaN(Number(initialDeposit)) || Number(initialDeposit) < 0) && (
+                <p className="text-xs text-destructive mt-1">Please enter a valid amount (0 or greater)</p>
+              )}
               <div className="mt-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
                 <p className="text-xs text-blue-600 font-medium mb-1">💡 Recommended Workflow</p>
                 <p className="text-xs text-blue-600/80">

@@ -5,47 +5,27 @@ export const dynamic = 'force-dynamic'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Clock } from 'lucide-react'
-import { useAccount, useWatchContractEvent } from 'wagmi'
-import { useState } from 'react'
-import { CONTRACT_ADDRESSES, FLOW_FACTORY_ABI } from '@/lib/contracts'
-
-interface ActivityItem {
-  id: string
-  type: 'payment' | 'approval' | 'flow'
-  title: string
-  description: string
-  time: string
-  icon: typeof Plus
-  status: 'completed' | 'pending'
-}
+import { Clock } from 'lucide-react'
+import { useAccount } from 'wagmi'
+import { useActivityFeed } from '@/hooks/useActivityFeed'
 
 export default function ActivityPage() {
-  const { address, isConnected } = useAccount()
-  const [activities, setActivities] = useState<ActivityItem[]>([])
+  const { isConnected } = useAccount()
+  const { activities } = useActivityFeed()
 
-  useWatchContractEvent({
-    address: CONTRACT_ADDRESSES.FLOW_FACTORY,
-    abi: FLOW_FACTORY_ABI,
-    eventName: 'FlowCreated',
-    onLogs(logs) {
-      logs.forEach((log) => {
-        if (log.args.owner?.toLowerCase() === address?.toLowerCase()) {
-          const newActivity: ActivityItem = {
-            id: `flow-${log.args.flowAddress}-${Date.now()}`,
-            type: 'flow',
-            title: 'Flow created',
-            description: `New ${Number(log.args.flowType) === 0 ? 'Milestone' : Number(log.args.flowType) === 1 ? 'Split' : 'Recurring'} flow created`,
-            time: 'Just now',
-            icon: Plus,
-            status: 'completed',
-          }
-          setActivities((prev) => [newActivity, ...prev].slice(0, 50))
-        }
-      })
-    },
-    enabled: isConnected && !!CONTRACT_ADDRESSES.FLOW_FACTORY,
-  })
+  function formatTime(timestamp: number): string {
+    const now = Date.now()
+    const diff = now - timestamp
+    const seconds = Math.floor(diff / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+    const days = Math.floor(hours / 24)
+
+    if (days > 0) return `${days}d ago`
+    if (hours > 0) return `${hours}h ago`
+    if (minutes > 0) return `${minutes}m ago`
+    return 'Just now'
+  }
 
   if (!isConnected) {
     return (
@@ -117,7 +97,7 @@ export default function ActivityPage() {
                         <p className="text-sm text-muted-foreground mb-1">
                           {activity.description}
                         </p>
-                        <p className="text-xs text-muted-foreground">{activity.time}</p>
+                        <p className="text-xs text-muted-foreground">{formatTime(activity.time)}</p>
                       </div>
                     </div>
                     {idx < activities.length - 1 && <Separator className="mt-4" />}

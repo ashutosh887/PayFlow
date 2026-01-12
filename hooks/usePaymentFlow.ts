@@ -77,6 +77,10 @@ export function useDepositToFlow(flowAddress: Address | undefined) {
       throw new Error('Flow address not provided')
     }
 
+    if (!amount || amount === '0' || amount === '0.0' || amount === '0.00') {
+      throw new Error('Deposit amount must be greater than 0')
+    }
+
     const amountWei = parseUnits(amount, 18)
 
     writeContract({

@@ -14,8 +14,12 @@ import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { useEffect } from 'react'
 import { ContractDeploymentNotice } from '@/components/common/ContractDeploymentNotice'
+import { NetworkWarning } from '@/components/common/NetworkWarning'
 import { areContractsDeployed } from '@/lib/contracts'
 import { getFlowMetadata } from '@/lib/flowMetadata'
+import { usePendingApprovals } from '@/hooks/usePendingApprovals'
+import { PendingApprovalCard } from '@/components/dashboard/PendingApprovalCard'
+import { useApprovalStatus } from '@/hooks/useApprovalManager'
 
 function FlowCardWrapper({ flowAddress }: { flowAddress: string }) {
   const { status, totalAmount, remainingAmount, flowType, isLoading } = useFlowData(
@@ -66,10 +70,26 @@ function FlowCardWrapper({ flowAddress }: { flowAddress: string }) {
   )
 }
 
+function PendingApprovalWrapper({ approvalId }: { approvalId: number }) {
+  const { approvalCount, requiredApprovals } = useApprovalStatus(approvalId)
+  
+  return (
+    <PendingApprovalCard
+      id={approvalId.toString()}
+      flowName={`Approval #${approvalId}`}
+      amount="Pending"
+      recipient="0x0000...0000"
+      required={requiredApprovals}
+      current={approvalCount}
+    />
+  )
+}
+
 export default function DashboardPage() {
   const { address, isConnected } = useAccount()
   const contractsDeployed = areContractsDeployed()
   const { flows, isLoading, error, refetch } = useFlowsByOwner()
+  const { pendingApprovals } = usePendingApprovals()
 
   useEffect(() => {
     if (isConnected && address && contractsDeployed) {
@@ -90,6 +110,7 @@ export default function DashboardPage() {
       </div>
       <div className="pt-6 space-y-6 px-4">
 
+      <NetworkWarning />
       <ContractDeploymentNotice />
 
       {!isConnected && (
@@ -112,8 +133,20 @@ export default function DashboardPage() {
               </div>
             </Card>
           ) : (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">My Flows</h2>
+            <div className="space-y-6">
+              {pendingApprovals.length > 0 && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Pending Approvals</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {pendingApprovals.map((approval) => (
+                      <PendingApprovalWrapper key={approval.approvalId} approvalId={approval.approvalId} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h2 className="text-xl font-semibold mb-4">My Flows</h2>
               {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[1, 2, 3].map((i) => (
@@ -157,6 +190,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               )}
+              </div>
             </div>
           )}
 
@@ -165,7 +199,10 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
             <Card className="p-6">
               <div className="text-center py-8">
-                <p className="text-muted-foreground">Activity will appear here as you use the app</p>
+                <p className="text-muted-foreground">View detailed activity in the Activity page</p>
+                <Link href="/app/activity" className="mt-2 inline-block">
+                  <Button variant="outline" size="sm">View All Activity</Button>
+                </Link>
               </div>
             </Card>
           </div>
