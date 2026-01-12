@@ -2,18 +2,33 @@
 
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
 import { mainnet, sepolia } from 'wagmi/chains'
-import { http } from 'wagmi'
+import { http, createConfig } from 'wagmi'
 import type { Config } from 'wagmi'
 
 let wagmiConfig: Config | null = null
 
 export function getWagmiConfig(): Config {
   if (!wagmiConfig) {
+    if (typeof window === 'undefined') {
+      wagmiConfig = createConfig({
+        chains: [mainnet, sepolia],
+        transports: {
+          [mainnet.id]: http(),
+          [sepolia.id]: http(),
+        },
+      }) as Config
+      return wagmiConfig
+    }
+
     const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || ''
     
+    if (!projectId) {
+      console.warn('WalletConnect Project ID not set. Some wallets may not appear.')
+    }
+
     wagmiConfig = getDefaultConfig({
       appName: 'PayFlow',
-      projectId: projectId || 'default',
+      projectId: projectId || '00000000000000000000000000000000',
       chains: [mainnet, sepolia] as any,
       ssr: true,
       transports: {
