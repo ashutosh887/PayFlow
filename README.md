@@ -19,6 +19,15 @@ PayFlow enables users to create automated payment workflows on Ethereum using th
 - **Multi-party Approvals**: Require multiple approvals before payments execute
 - **Flow Management**: Pause, resume, or cancel active flows
 
+## Hackathon Submission
+
+**Track**: Automated Finance / Commerce
+
+**How MNEE is Used**: 
+PayFlow uses MNEE (ERC-20) as the exclusive payment token for all workflows. Users deposit MNEE tokens into payment flows, and all automated payments (milestones, splits, recurring payments) are executed in MNEE. The smart contracts interact with the MNEE token contract at `0x8ccedbAe4916b79da7F3F612EfB2EB93A2bFD6cF` for all token transfers, approvals, and balance checks. This enables programmable money flows where MNEE tokens are automatically distributed based on predefined business logic.
+
+**MNEE Token Contract**: `0x8ccedbAe4916b79da7F3F612EfB2EB93A2bFD6cF` (Ethereum Sepolia)
+
 ## Tech Stack
 
 - **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS
@@ -159,6 +168,36 @@ Connect to Sepolia testnet and use test MNEE tokens. Get Sepolia ETH from:
 - [Sepolia Faucet](https://sepoliafaucet.com/)
 - [Alchemy Faucet](https://www.alchemy.com/faucets/ethereum-sepolia)
 
+## Demo
+
+**Live Demo URL**: [Add your deployed demo URL here]
+
+**Test Credentials**:
+- Network: Sepolia Testnet
+- Wallet: Connect any Web3 wallet (MetaMask, WalletConnect)
+- Test MNEE tokens required for creating flows
+
+## Third-Party Dependencies
+
+This project uses the following third-party libraries and services:
+
+### Frontend
+- **Next.js** (MIT) - React framework
+- **wagmi** (MIT) - React Hooks for Ethereum
+- **viem** (MIT) - TypeScript Ethereum library
+- **RainbowKit** (MIT) - Wallet connection UI
+- **React Flow** (MIT) - Flow visualization
+- **OpenZeppelin Contracts** (MIT) - Smart contract libraries
+- **Tailwind CSS** (MIT) - CSS framework
+- **shadcn/ui** (MIT) - UI components
+
+### Smart Contracts
+- **Hardhat** (MIT) - Ethereum development environment
+- **OpenZeppelin Contracts** (MIT) - Secure smart contract libraries
+- **Ethers.js** (MIT) - Ethereum library
+
+All dependencies are open-source and properly licensed. We have the right to use all included libraries and SDKs.
+
 ## License
 
-ISC
+ISC License - See [LICENSE](./LICENSE) file for details.
