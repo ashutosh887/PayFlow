@@ -22,9 +22,9 @@ import Link from 'next/link'
 import { useFlowData, usePauseFlow, useResumeFlow, useCancelFlow, useAddMilestone, useAddSplit, useExecuteSplitPayment, useFlowSplits } from '@/hooks/usePaymentFlow'
 import { formatUnits, parseUnits } from 'viem'
 import { useAccount } from 'wagmi'
-import { useState, useEffect } from 'react'
-import { useReadContract } from 'wagmi'
-import { PAYMENT_FLOW_ABI } from '@/lib/contracts'
+import { useState, useEffect, useMemo } from 'react'
+import { FlowVisualization } from '@/components/dashboard/FlowVisualization'
+import { useFlowMilestone, useFlowSplit } from '@/hooks/useFlowMilestones'
 
 export default function FlowDetailsPage({
   params,
@@ -37,6 +37,7 @@ export default function FlowDetailsPage({
     useFlowData(flowAddress)
 
   const [milestones, setMilestones] = useState<any[]>([])
+  const [splits, setSplits] = useState<any[]>([])
   const [showAddMilestone, setShowAddMilestone] = useState(false)
   const [newMilestoneAmount, setNewMilestoneAmount] = useState('')
   const [newMilestoneRecipient, setNewMilestoneRecipient] = useState('')
@@ -54,23 +55,45 @@ export default function FlowDetailsPage({
   const { splitCount } = useFlowSplits(flowAddress)
 
   useEffect(() => {
+    if (isAddSuccess) {
+      window.location.reload()
+    }
+  }, [isAddSuccess])
+
+  useEffect(() => {
+    if (isAddSplitSuccess) {
+      window.location.reload()
+    }
+  }, [isAddSplitSuccess])
+
+  useEffect(() => {
     if (milestoneCount > 0) {
-      const fetchMilestones = async () => {
-        const milestoneData = []
-        for (let i = 0; i < milestoneCount; i++) {
-          milestoneData.push({
-            id: i,
-            amount: 0n,
-            recipient: '0x',
-            completed: false,
-            paid: false,
-          })
-        }
-        setMilestones(milestoneData)
+      const milestoneData = []
+      for (let i = 0; i < milestoneCount; i++) {
+        milestoneData.push({
+          id: i,
+          amount: 0n,
+          recipient: '0x' as `0x${string}`,
+          completed: false,
+          paid: false,
+        })
       }
-      fetchMilestones()
+      setMilestones(milestoneData)
+    } else {
+      setMilestones([])
     }
   }, [milestoneCount])
+
+  useEffect(() => {
+    if (splitCount > 0) {
+      setSplits(Array.from({ length: splitCount }, (_, i) => ({
+        recipient: '0x' as `0x${string}`,
+        percentage: 0,
+      })))
+    } else {
+      setSplits([])
+    }
+  }, [splitCount])
 
   const statusMap: Record<number, { label: string; color: string }> = {
     0: { label: 'Active', color: 'bg-green-500/10 text-green-500' },
@@ -220,113 +243,144 @@ export default function FlowDetailsPage({
         </Card>
 
         {flowType === 0 && (
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Milestones</h2>
-              {isOwner && status === 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAddMilestone(!showAddMilestone)}
-                >
-                  Add Milestone
-                </Button>
-              )}
-            </div>
-
-            {showAddMilestone && (
-              <Card className="p-4 mb-4 bg-muted/50">
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="amount">Amount (MNEE)</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={newMilestoneAmount}
-                      onChange={(e) => setNewMilestoneAmount(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="recipient">Recipient Address</Label>
-                    <Input
-                      id="recipient"
-                      type="text"
-                      placeholder="0x..."
-                      value={newMilestoneRecipient}
-                      onChange={(e) => setNewMilestoneRecipient(e.target.value)}
-                      className="mt-1 font-mono"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleAddMilestone}
-                      disabled={isPendingAdd || !newMilestoneAmount || !newMilestoneRecipient}
-                      size="sm"
-                    >
-                      {isPendingAdd ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Adding...
-                        </>
-                      ) : (
-                        'Add Milestone'
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setShowAddMilestone(false)
-                        setNewMilestoneAmount('')
-                        setNewMilestoneRecipient('')
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
+          <>
+            {milestones.length > 0 && (
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Flow Visualization</h2>
+                <FlowVisualization milestones={milestones} flowType={flowType} />
               </Card>
             )}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">Milestones</h2>
+                {isOwner && status === 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddMilestone(!showAddMilestone)}
+                  >
+                    Add Milestone
+                  </Button>
+                )}
+              </div>
 
-            {milestoneCount === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No milestones yet. Add your first milestone to get started.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {Array.from({ length: milestoneCount }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded bg-muted">
+              {showAddMilestone && (
+                <Card className="p-4 mb-4 bg-muted/50">
+                  <div className="space-y-3">
                     <div>
-                      <div className="font-medium">Milestone {i + 1}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Details will be loaded from contract
-                      </div>
+                      <Label htmlFor="amount">Amount (MNEE)</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={newMilestoneAmount}
+                        onChange={(e) => setNewMilestoneAmount(e.target.value)}
+                        className="mt-1"
+                      />
                     </div>
-                    <Badge variant="outline">Pending</Badge>
+                    <div>
+                      <Label htmlFor="recipient">Recipient Address</Label>
+                      <Input
+                        id="recipient"
+                        type="text"
+                        placeholder="0x..."
+                        value={newMilestoneRecipient}
+                        onChange={(e) => setNewMilestoneRecipient(e.target.value)}
+                        className="mt-1 font-mono"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleAddMilestone}
+                        disabled={isPendingAdd || !newMilestoneAmount || !newMilestoneRecipient}
+                        size="sm"
+                      >
+                        {isPendingAdd ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Adding...
+                          </>
+                        ) : (
+                          'Add Milestone'
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowAddMilestone(false)
+                          setNewMilestoneAmount('')
+                          setNewMilestoneRecipient('')
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </Card>
+                </Card>
+              )}
+
+              {milestoneCount === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No milestones yet. Add your first milestone to get started.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {milestones.map((milestone) => (
+                    <div key={milestone.id} className="flex items-center justify-between p-3 rounded bg-muted">
+                      <div>
+                        <div className="font-medium">Milestone {milestone.id + 1}</div>
+                        <div className="text-sm text-muted-foreground font-mono">
+                          {milestone.recipient.slice(0, 6)}...{milestone.recipient.slice(-4)}
+                        </div>
+                        <div className="text-sm font-medium mt-1">
+                          {Number(formatUnits(milestone.amount, 18)).toLocaleString(undefined, {
+                            maximumFractionDigits: 2,
+                          })}{' '}
+                          MNEE
+                        </div>
+                      </div>
+                      <Badge
+                        className={
+                          milestone.paid
+                            ? 'bg-green-500/10 text-green-500'
+                            : milestone.completed
+                            ? 'bg-blue-500/10 text-blue-500'
+                            : 'bg-gray-500/10 text-gray-500'
+                        }
+                      >
+                        {milestone.paid ? 'Paid' : milestone.completed ? 'Ready' : 'Pending'}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </>
         )}
 
         {flowType === 1 && (
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Revenue Splits</h2>
-              {isOwner && status === 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAddSplit(!showAddSplit)}
-                >
-                  Add Split
-                </Button>
-              )}
-            </div>
+          <>
+            {splits.length > 0 && (
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Flow Visualization</h2>
+                <FlowVisualization milestones={[]} flowType={flowType} splits={splits} />
+              </Card>
+            )}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">Revenue Splits</h2>
+                {isOwner && status === 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddSplit(!showAddSplit)}
+                  >
+                    Add Split
+                  </Button>
+                )}
+              </div>
 
             {showAddSplit && (
               <Card className="p-4 mb-4 bg-muted/50">
@@ -417,6 +471,7 @@ export default function FlowDetailsPage({
               </div>
             )}
           </Card>
+          </>
         )}
 
         {isOwner && (
