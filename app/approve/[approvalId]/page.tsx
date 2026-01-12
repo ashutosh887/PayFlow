@@ -9,6 +9,7 @@ import { Check, X, Copy, CheckCircle2, Loader2, AlertCircle } from 'lucide-react
 import { useState } from 'react'
 import { useApprove, useApprovalStatus } from '@/hooks/useApprovalManager'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/lib/toast'
 
 export default function ApprovalPageRoute({
   params,
@@ -17,6 +18,7 @@ export default function ApprovalPageRoute({
 }) {
   const { isConnected } = useAccount()
   const router = useRouter()
+  const { showToast } = useToast()
   const [copied, setCopied] = useState(false)
   const approvalId = parseInt(params.approvalId)
 
@@ -36,7 +38,17 @@ export default function ApprovalPageRoute({
     if (!isConnected) return
     try {
       await approve()
-    } catch {
+      showToast({
+        type: 'success',
+        title: 'Approval submitted',
+        description: 'Your approval has been recorded on the blockchain.',
+      })
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: 'Approval failed',
+        description: (error as Error)?.message || 'Failed to submit approval. Please try again.',
+      })
     }
   }
 
@@ -141,6 +153,24 @@ export default function ApprovalPageRoute({
                       </div>
                     </div>
                   )}
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <label className="text-sm text-muted-foreground mb-2 block">
+                  What is this approval for?
+                </label>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-sm">
+                    This approval is required to authorize a payment transaction. 
+                    Once the required number of approvals ({requiredApprovals}) is reached, 
+                    the payment can proceed.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Approval ID: {params.approvalId}
+                  </p>
                 </div>
               </div>
             </div>

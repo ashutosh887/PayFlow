@@ -15,9 +15,13 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { useCreateMilestoneFlow, useCreateSplitFlow, useCreateRecurringFlow } from '@/hooks/useFlowFactory'
-import { useAccount } from 'wagmi'
-import { useSearchParams } from 'next/navigation'
+import { useAccount, usePublicClient, useWatchContractEvent } from 'wagmi'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useToast } from '@/lib/toast'
+import { setFlowMetadata } from '@/lib/flowMetadata'
+import { Textarea } from '@/components/ui/textarea'
+import { CONTRACT_ADDRESSES, FLOW_FACTORY_ABI } from '@/lib/contracts'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,15 +32,21 @@ const templates = [
 ]
 
 export default function CreateFlowPage() {
-  const { isConnected } = useAccount()
+  const { isConnected, address } = useAccount()
+  const router = useRouter()
+  const { showToast } = useToast()
   const searchParams = useSearchParams()
   const templateParam = searchParams.get('template')
   const initialTemplate = templateParam && templates.some(t => t.id === templateParam) ? templateParam : null
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(initialTemplate)
   const [initialDeposit, setInitialDeposit] = useState('')
+  const [flowName, setFlowName] = useState('')
+  const [flowDescription, setFlowDescription] = useState('')
   const [showForm, setShowForm] = useState(!!initialTemplate)
   const [isDeploying, setIsDeploying] = useState(false)
   const [deployError, setDeployError] = useState<string | null>(null)
+  const [createdFlowAddress, setCreatedFlowAddress] = useState<string | null>(null)
+  const publicClient = usePublicClient()
 
   const {
     createFlow: createMilestoneFlow,
@@ -62,6 +72,28 @@ export default function CreateFlowPage() {
   const isPending = isPendingMilestone || isPendingSplit || isPendingRecurring || isDeploying
   const isSuccess = isSuccessMilestone || isSuccessSplit || isSuccessRecurring
   const error = errorMilestone || errorSplit || errorRecurring
+
+  // Watch for FlowCreated event to get the flow address and save metadata
+  useWatchContractEvent({
+    address: CONTRACT_ADDRESSES.FLOW_FACTORY,
+    abi: FLOW_FACTORY_ABI,
+    eventName: 'FlowCreated',
+    onLogs(logs) {
+      logs.forEach((log) => {
+        if (log.args.owner?.toLowerCase() === address?.toLowerCase()) {
+          const flowAddress = log.args.flowAddress as string
+          setCreatedFlowAddress(flowAddress)
+          if (flowName || flowDescription) {
+            setFlowMetadata(flowAddress, {
+              name: flowName || `Flow ${flowAddress.slice(0, 6)}...${flowAddress.slice(-4)}`,
+              description: flowDescription,
+            })
+          }
+        }
+      })
+    },
+    enabled: isConnected && !!CONTRACT_ADDRESSES.FLOW_FACTORY && isSuccess && !!address,
+  })
 
   if (isSuccess && isDeploying) {
     setIsDeploying(false)
@@ -95,10 +127,21 @@ export default function CreateFlowPage() {
       } else if (selectedTemplate === 'recurring') {
         await createRecurringFlow(depositValue)
       }
+      
+      showToast({
+        type: 'success',
+        title: 'Flow created successfully!',
+        description: 'Your payment flow has been deployed to the blockchain.',
+      })
     } catch (err: unknown) {
       setIsDeploying(false)
       const errorMessage = (err as Error)?.message || (err as { shortMessage?: string })?.shortMessage || 'Failed to create flow. Please try again.'
       setDeployError(errorMessage)
+      showToast({
+        type: 'error',
+        title: 'Failed to create flow',
+        description: errorMessage,
+      })
     }
   }
 
@@ -204,6 +247,35 @@ export default function CreateFlowPage() {
 
           <div className="space-y-4">
             <div>
+              <Label htmlFor="flow-name">Flow Name *</Label>
+              <Input
+                id="flow-name"
+                type="text"
+                placeholder="e.g., Q1 Project Payments"
+                value={flowName}
+                onChange={(e) => setFlowName(e.target.value)}
+                disabled={isPending}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Give your flow a memorable name to easily identify it later
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="flow-description">Description (Optional)</Label>
+              <Textarea
+                id="flow-description"
+                placeholder="Describe the purpose of this payment flow..."
+                value={flowDescription}
+                onChange={(e) => setFlowDescription(e.target.value)}
+                disabled={isPending}
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+
+            <div>
               <Label htmlFor="deposit">Initial Deposit (MNEE)</Label>
               <Input
                 id="deposit"
@@ -257,7 +329,7 @@ export default function CreateFlowPage() {
             <div className="flex gap-3">
               <Button
                 onClick={handleDeploy}
-                disabled={isPending}
+                disabled={isPending || !flowName.trim()}
                 className="flex-1"
               >
                 {isPending ? (

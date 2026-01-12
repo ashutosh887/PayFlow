@@ -4,6 +4,7 @@ import config from "@/config";
 import { Nunito_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Web3Provider } from "@/components/providers/Web3Provider";
+import { ToastProvider } from "@/lib/toast";
 
 const nunitoSans = Nunito_Sans({ variable: "--font-sans" });
 
@@ -31,7 +32,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Web3Provider>
-            {children}
+            <ToastProvider>
+              {children}
+            </ToastProvider>
           </Web3Provider>
         </ThemeProvider>
       </body>

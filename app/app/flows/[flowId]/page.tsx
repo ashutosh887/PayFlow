@@ -23,6 +23,7 @@ import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { useState, useEffect } from 'react'
 import { useFlowMilestone, useFlowSplit } from '@/hooks/useFlowMilestones'
+import { useToast } from '@/lib/toast'
 
 export default function FlowDetailsPage({
   params,
@@ -30,6 +31,7 @@ export default function FlowDetailsPage({
   params: { flowId: string }
 }) {
   const { address } = useAccount()
+  const { showToast } = useToast()
   const flowAddress = params.flowId as `0x${string}`
   const { status, totalAmount, remainingAmount, flowType, owner, milestoneCount, isLoading } =
     useFlowData(flowAddress)
@@ -100,7 +102,17 @@ export default function FlowDetailsPage({
       setNewMilestoneAmount('')
       setNewMilestoneRecipient('')
       setShowAddMilestone(false)
-    } catch {
+      showToast({
+        type: 'success',
+        title: 'Milestone added',
+        description: `Added milestone for ${newMilestoneAmount} MNEE`,
+      })
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: 'Failed to add milestone',
+        description: (error as Error)?.message || 'Please try again',
+      })
     }
   }
 
@@ -133,7 +145,17 @@ export default function FlowDetailsPage({
   const handleExecutePayment = async (milestoneId: number) => {
     try {
       await executePayment(milestoneId)
-    } catch {
+      showToast({
+        type: 'success',
+        title: 'Payment executed',
+        description: 'Milestone payment has been sent successfully',
+      })
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: 'Payment failed',
+        description: (error as Error)?.message || 'Please try again',
+      })
     }
   }
 
@@ -143,7 +165,17 @@ export default function FlowDetailsPage({
       await deposit(depositAmount)
       setDepositAmount('')
       setShowDeposit(false)
-    } catch {
+      showToast({
+        type: 'success',
+        title: 'Deposit successful',
+        description: `Deposited ${depositAmount} MNEE to flow`,
+      })
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: 'Deposit failed',
+        description: (error as Error)?.message || 'Please try again',
+      })
     }
   }
 

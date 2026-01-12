@@ -15,6 +15,7 @@ import { useAccount } from 'wagmi'
 import { useEffect } from 'react'
 import { ContractDeploymentNotice } from '@/components/common/ContractDeploymentNotice'
 import { areContractsDeployed } from '@/lib/contracts'
+import { getFlowMetadata } from '@/lib/flowMetadata'
 
 function FlowCardWrapper({ flowAddress }: { flowAddress: string }) {
   const { status, totalAmount, remainingAmount, flowType, isLoading } = useFlowData(
@@ -50,10 +51,13 @@ function FlowCardWrapper({ flowAddress }: { flowAddress: string }) {
     3: 'Escrow',
   }
 
+  const metadata = getFlowMetadata(flowAddress)
+  const flowName = metadata?.name || `Flow ${flowAddress.slice(0, 6)}...${flowAddress.slice(-4)}`
+
   return (
     <FlowCard
       id={flowAddress}
-      name={`Flow ${flowAddress.slice(0, 6)}...${flowAddress.slice(-4)}`}
+      name={flowName}
       status={statusMap[status] || 'active'}
       totalAmount={formatUnits(totalAmount, 18)}
       remainingAmount={formatUnits(remainingAmount, 18)}
