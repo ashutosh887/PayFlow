@@ -1,196 +1,260 @@
 "use client"
 
-import { useCallback, useState } from 'react'
-import {
-  ReactFlow,
-  Node,
-  Edge,
-  addEdge,
-  Connection,
-  useNodesState,
-  useEdgesState,
-  Background,
-  Controls,
-  MiniMap,
-  NodeTypes,
-} from '@xyflow/react'
-import '@xyflow/react/dist/style.css'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Play, 
-  Save, 
-  Trash2, 
-  Plus, 
-  Target, 
-  DollarSign, 
-  Lock, 
-  RefreshCw, 
-  Zap, 
-  CheckCircle2, 
-  Send, 
-  PieChart, 
-  GitBranch, 
-  Clock 
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Target,
+  DollarSign,
+  RefreshCw,
+  Play,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react'
+import { useCreateMilestoneFlow, useCreateSplitFlow, useCreateRecurringFlow } from '@/hooks/useFlowFactory'
+import { useAccount } from 'wagmi'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
-const initialNodes: Node[] = [
-  {
-    id: '1',
-    type: 'input',
-    data: { label: 'Start' },
-    position: { x: 250, y: 0 },
-  },
+const templates = [
+  { id: 'milestone', name: 'Milestone Payment', icon: Target, description: 'Pay contractors when milestones are completed' },
+  { id: 'split', name: 'Revenue Split', icon: DollarSign, description: 'Automatically split payments among recipients' },
+  { id: 'recurring', name: 'Recurring Payment', icon: RefreshCw, description: 'Set up automatic recurring payments' },
 ]
 
-const initialEdges: Edge[] = []
-
-const nodeTypes: NodeTypes = {}
-
 export default function CreateFlowPage() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+  const { address, isConnected } = useAccount()
+  const router = useRouter()
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  const [initialDeposit, setInitialDeposit] = useState('')
+  const [showForm, setShowForm] = useState(false)
 
-  const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  )
+  const {
+    createFlow: createMilestoneFlow,
+    isPending: isPendingMilestone,
+    isSuccess: isSuccessMilestone,
+    error: errorMilestone,
+  } = useCreateMilestoneFlow()
 
-  const addNode = (type: string, label: string) => {
-    const newNode: Node = {
-      id: `${Date.now()}`,
-      type: 'default',
-      data: { label },
-      position: {
-        x: Math.random() * 400 + 100,
-        y: Math.random() * 400 + 100,
-      },
-    }
-    setNodes((nds) => [...nds, newNode])
+  const {
+    createFlow: createSplitFlow,
+    isPending: isPendingSplit,
+    isSuccess: isSuccessSplit,
+    error: errorSplit,
+  } = useCreateSplitFlow()
+
+  const {
+    createFlow: createRecurringFlow,
+    isPending: isPendingRecurring,
+    isSuccess: isSuccessRecurring,
+    error: errorRecurring,
+  } = useCreateRecurringFlow()
+
+  const isPending = isPendingMilestone || isPendingSplit || isPendingRecurring
+  const isSuccess = isSuccessMilestone || isSuccessSplit || isSuccessRecurring
+  const error = errorMilestone || errorSplit || errorRecurring
+
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplate(templateId)
+    setShowForm(true)
   }
 
-  const templates = [
-    { id: 'milestone', name: 'Milestone Payment', icon: Target },
-    { id: 'split', name: 'Revenue Split', icon: DollarSign },
-    { id: 'escrow', name: 'Escrow Release', icon: Lock },
-    { id: 'recurring', name: 'Recurring Payment', icon: RefreshCw },
-  ]
-
-  const components = [
-    { type: 'trigger', label: 'Trigger', icon: Zap },
-    { type: 'approval', label: 'Approval Gate', icon: CheckCircle2 },
-    { type: 'payment', label: 'Payment', icon: Send },
-    { type: 'split', label: 'Split', icon: PieChart },
-    { type: 'condition', label: 'Condition', icon: GitBranch },
-    { type: 'delay', label: 'Delay', icon: Clock },
-  ]
-
-  const loadTemplate = (templateId: string) => {
-    setSelectedTemplate(templateId)
-    if (templateId === 'milestone') {
-      const templateNodes: Node[] = [
-        { id: '1', type: 'input', data: { label: 'Start' }, position: { x: 250, y: 0 } },
-        { id: '2', type: 'default', data: { label: 'Milestone Complete' }, position: { x: 250, y: 100 } },
-        { id: '3', type: 'default', data: { label: 'Approval Required' }, position: { x: 250, y: 200 } },
-        { id: '4', type: 'default', data: { label: 'Send Payment' }, position: { x: 250, y: 300 } },
-      ]
-      const templateEdges: Edge[] = [
-        { id: 'e1-2', source: '1', target: '2' },
-        { id: 'e2-3', source: '2', target: '3' },
-        { id: 'e3-4', source: '3', target: '4' },
-      ]
-      setNodes(templateNodes)
-      setEdges(templateEdges)
+  const handleDeploy = async () => {
+    if (!selectedTemplate) {
+      return
     }
+
+    try {
+      if (selectedTemplate === 'milestone') {
+        await createMilestoneFlow(initialDeposit || '0')
+      } else if (selectedTemplate === 'split') {
+        await createSplitFlow(initialDeposit || '0')
+      } else if (selectedTemplate === 'recurring') {
+        await createRecurringFlow(initialDeposit || '0')
+      }
+    } catch (err) {
+      console.error('Error creating flow:', err)
+    }
+  }
+
+  if (isSuccess) {
+    return (
+      <div className="w-full">
+        <div className="h-16 px-4 flex items-center">
+          <div>
+            <h1 className="text-xl font-bold mb-1">Flow Created</h1>
+            <p className="text-sm text-muted-foreground">Your payment flow has been deployed</p>
+          </div>
+        </div>
+        <div className="pt-6 px-4">
+          <Card className="p-8">
+          <div className="text-center space-y-4">
+            <div className="flex justify-center">
+              <div className="p-4 rounded-full bg-green-500/10">
+                <CheckCircle2 className="h-12 w-12 text-green-500" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold">Flow Created Successfully!</h2>
+            <p className="text-muted-foreground">
+              Your payment flow has been deployed to the blockchain.
+            </p>
+            <div className="pt-4">
+              <Link href="/app">
+                <Button>View Dashboard</Button>
+              </Link>
+            </div>
+          </div>
+        </Card>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isConnected) {
+    return (
+      <div className="w-full">
+        <div className="h-16 px-4 flex items-center">
+          <div>
+            <h1 className="text-xl font-bold mb-1">Create Payment Flow</h1>
+            <p className="text-sm text-muted-foreground">Connect your wallet to get started</p>
+          </div>
+        </div>
+        <div className="pt-6 px-4">
+          <Card className="p-8">
+            <div className="text-center space-y-4">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+              <h2 className="text-2xl font-bold">Connect Your Wallet</h2>
+              <p className="text-muted-foreground">
+                Please connect your wallet to create a payment flow.
+              </p>
+            </div>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="flex h-[calc(100vh-8rem)]">
-      <div className="w-64 border-r p-4 space-y-4 overflow-y-auto">
+    <div className="w-full">
+      <div className="h-16 px-4 flex items-center">
         <div>
-          <h3 className="text-sm font-semibold mb-3">Templates</h3>
-          <div className="space-y-2">
+          <h1 className="text-xl font-bold mb-1">Create Payment Flow</h1>
+          <p className="text-sm text-muted-foreground">Choose a template to get started</p>
+        </div>
+      </div>
+
+      <div className="pt-6 px-4">
+      {!showForm ? (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Choose a Template</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {templates.map((template) => {
               const IconComponent = template.icon
               return (
                 <Card
                   key={template.id}
-                  className="p-3 cursor-pointer hover:bg-accent transition-colors"
-                  onClick={() => loadTemplate(template.id)}
+                  className="p-6 cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary h-full"
+                  onClick={() => handleTemplateSelect(template.id)}
                 >
-                  <div className="flex items-center gap-2">
-                    <IconComponent className="h-4 w-4" />
-                    <span className="text-sm">{template.name}</span>
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    <div className="p-3 rounded-lg bg-muted">
+                      <IconComponent className="h-8 w-8" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">{template.name}</h3>
+                      <p className="text-sm text-muted-foreground">{template.description}</p>
+                    </div>
                   </div>
                 </Card>
               )
             })}
           </div>
         </div>
-
-        <div>
-          <h3 className="text-sm font-semibold mb-3">Components</h3>
-          <div className="space-y-2">
-            {components.map((comp) => {
-              const IconComponent = comp.icon
-              return (
-                <Card
-                  key={comp.type}
-                  className="p-3 cursor-pointer hover:bg-accent transition-colors"
-                  onClick={() => addNode(comp.type, comp.label)}
-                >
-                  <div className="flex items-center gap-2">
-                    <IconComponent className="h-4 w-4" />
-                    <span className="text-sm">{comp.label}</span>
-                  </div>
-                </Card>
-              )
-            })}
+      ) : (
+        <div className="px-4">
+        <Card className="p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">
+                {templates.find((t) => t.id === selectedTemplate)?.name}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {templates.find((t) => t.id === selectedTemplate)?.description}
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => setShowForm(false)}>
+              Change Template
+            </Button>
           </div>
-        </div>
-      </div>
 
-      <div className="flex-1 flex flex-col">
-        <div className="border-b p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold">Flow Builder</h2>
-            {selectedTemplate && (
-              <Badge variant="secondary">{templates.find(t => t.id === selectedTemplate)?.name}</Badge>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="deposit">Initial Deposit (MNEE)</Label>
+              <Input
+                id="deposit"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={initialDeposit}
+                onChange={(e) => setInitialDeposit(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Optional. You can add more funds after creation.
+              </p>
+            </div>
+
+            {error && (
+              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                <div className="flex items-center gap-2 text-destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-sm font-medium">Error</span>
+                </div>
+                <p className="text-sm text-destructive/80 mt-1">
+                  {error.message || 'Failed to create flow. Please try again.'}
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <Button
+                onClick={handleDeploy}
+                disabled={isPending}
+                className="flex-1"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deploying...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Deploy Flow
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {selectedTemplate === 'milestone' && (
+              <div className="p-4 rounded-lg bg-muted/50">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Next steps:</strong> After deployment, you can add milestones, set recipients,
+                  and configure payment amounts in the flow details page.
+                </p>
+              </div>
             )}
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Save className="h-4 w-4 mr-2" />
-              Save Draft
-            </Button>
-            <Button size="sm">
-              <Play className="h-4 w-4 mr-2" />
-              Deploy Flow
-            </Button>
-          </div>
+        </Card>
         </div>
-
-        <div className="flex-1">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            nodeTypes={nodeTypes}
-            fitView
-          >
-            <Background />
-            <Controls />
-            <MiniMap />
-          </ReactFlow>
-        </div>
+      )}
       </div>
     </div>
   )
 }
-  

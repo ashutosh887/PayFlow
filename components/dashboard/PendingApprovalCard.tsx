@@ -24,11 +24,11 @@ export function PendingApprovalCard({
   current,
 }: PendingApprovalCardProps) {
   return (
-    <Card className="p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <div>
+    <Card className="p-6 hover:shadow-md transition-shadow h-full flex flex-col">
+      <div className="flex items-start justify-between mb-4 flex-1">
+        <div className="flex-1">
           <h4 className="font-semibold mb-1">{flowName}</h4>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-2">
             {amount} MNEE to {recipient.slice(0, 6)}...{recipient.slice(-4)}
           </p>
         </div>

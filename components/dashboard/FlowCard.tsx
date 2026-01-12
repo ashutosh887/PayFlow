@@ -38,9 +38,9 @@ export function FlowCard({
   }
 
   return (
-    <Card className="p-6 hover:shadow-md transition-shadow">
+    <Card className="p-6 hover:shadow-md transition-shadow h-full flex flex-col">
       <div className="flex items-start justify-between mb-4">
-        <div>
+        <div className="flex-1">
           <h3 className="text-lg font-semibold mb-1">{name}</h3>
           <Badge variant="outline" className="text-xs">{type}</Badge>
         </div>
@@ -50,14 +50,24 @@ export function FlowCard({
         </Badge>
       </div>
 
-      <div className="space-y-2 mb-4">
+      <div className="space-y-2 mb-4 flex-1">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Total:</span>
-          <span className="font-medium">{totalAmount} MNEE</span>
+          <span className="font-medium">
+            {Number(totalAmount).toLocaleString(undefined, {
+              maximumFractionDigits: 2,
+            })}{' '}
+            MNEE
+          </span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Remaining:</span>
-          <span className="font-medium">{remainingAmount} MNEE</span>
+          <span className="font-medium">
+            {Number(remainingAmount).toLocaleString(undefined, {
+              maximumFractionDigits: 2,
+            })}{' '}
+            MNEE
+          </span>
         </div>
         {nextMilestone && (
           <div className="text-sm text-muted-foreground">

@@ -32,15 +32,18 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account and preferences
-        </p>
+    <div className="w-full">
+      <div className="h-16 px-4 flex items-center">
+        <div>
+          <h1 className="text-xl font-bold mb-1">Settings</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage your account and preferences
+          </p>
+        </div>
       </div>
 
-      <Card className="p-6">
+      <div className="pt-6 space-y-6 px-4">
+        <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Wallet</h2>
         {isConnected && address ? (
           <div className="space-y-4">
@@ -101,6 +104,7 @@ export default function SettingsPage() {
           </div>
         </div>
       </Card>
+      </div>
     </div>
   )
 }
