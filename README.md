@@ -170,6 +170,25 @@ Connect to Sepolia testnet and use test MNEE tokens. Get Sepolia ETH from:
 
 ## Demo
 
+### Demo Video
+
+<div align="center" style="max-width: 640px; margin: 0 auto;">
+  <iframe 
+    width="560" 
+    height="315" 
+    src="https://www.youtube.com/embed/Lr-06dRK9tM" 
+    title="PayFlow Demo Video" 
+    frameborder="0" 
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+    allowfullscreen
+    style="max-width: 100%; height: auto; aspect-ratio: 16/9;">
+  </iframe>
+</div>
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=Lr-06dRK9tM">Watch on YouTube</a>
+</p>
+
 **Live Demo URL**: [Add your deployed demo URL here]
 
 **Test Credentials**:
