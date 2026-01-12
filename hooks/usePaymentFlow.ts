@@ -293,3 +293,72 @@ export function useCancelFlow(flowAddress: Address | undefined) {
     error,
   }
 }
+
+export function useAddSplit(flowAddress: Address | undefined) {
+  const { writeContract, data: hash, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  })
+
+  const addSplit = async (recipient: Address, percentage: number) => {
+    if (!flowAddress) {
+      throw new Error('Flow address not provided')
+    }
+
+    writeContract({
+      address: flowAddress,
+      abi: PAYMENT_FLOW_ABI,
+      functionName: 'addSplit',
+      args: [recipient, BigInt(percentage)],
+    })
+  }
+
+  return {
+    addSplit,
+    hash,
+    isPending: isPending || isConfirming,
+    isSuccess,
+    error,
+  }
+}
+
+export function useExecuteSplitPayment(flowAddress: Address | undefined) {
+  const { writeContract, data: hash, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  })
+
+  const executeSplit = async () => {
+    if (!flowAddress) {
+      throw new Error('Flow address not provided')
+    }
+
+    writeContract({
+      address: flowAddress,
+      abi: PAYMENT_FLOW_ABI,
+      functionName: 'executeSplitPayment',
+    })
+  }
+
+  return {
+    executeSplit,
+    hash,
+    isPending: isPending || isConfirming,
+    isSuccess,
+    error,
+  }
+}
+
+export function useFlowSplits(flowAddress: Address | undefined) {
+  const { data: splitCount, isLoading } = useReadContract({
+    address: flowAddress,
+    abi: PAYMENT_FLOW_ABI,
+    functionName: 'getSplitCount',
+    query: { enabled: !!flowAddress },
+  })
+
+  return {
+    splitCount: splitCount ? Number(splitCount) : 0,
+    isLoading,
+  }
+}
