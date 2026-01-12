@@ -88,7 +88,7 @@ export default function Home() {
                 Get Started
               </Button>
 
-              <Button size="lg" variant="outline" className="rounded-full px-8">
+              <Button size="lg" variant="outline" className="rounded-full px-8" onClick={() => window.open(config.appDemoUrl, "_blank")}>
                 View Demo
               </Button>
             </div>

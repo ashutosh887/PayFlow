@@ -10,5 +10,6 @@ export default {
     },
     appLogo: "/logo.png",
     appLogoAlt: "PayFlow Logo",
+    appDemoUrl: "https://www.youtube.com/watch?v=Lr-06dRK9tM",
   };
   
