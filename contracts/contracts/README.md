@@ -126,6 +126,6 @@ See the main [README.md](../../README.md) for deployment instructions.
 ## Links
 
 - [Main README](../../README.md)
-- [FlowFactory on Etherscan](https://sepolia.etherscan.io/address/0x08dC530E42D4De7d6dF2c1FDeAb2A96A8b444979)
-- [PaymentFlow on Etherscan](https://sepolia.etherscan.io/address/0xa159999d149Ae8fDd082354406D191f3DA3e84aF)
-- [ApprovalManager on Etherscan](https://sepolia.etherscan.io/address/0x3D23383124A4467D2394A48A7D8cbf5110d977F3)
+- [FlowFactory on Etherscan](https://sepolia.etherscan.io/address/0x0419AEb7916d951938acB45949Dc70460D25dc75)
+- [PaymentFlow on Etherscan](https://sepolia.etherscan.io/address/0x5CC071537C35494b9FDFc74673065a579765F607)
+- [ApprovalManager on Etherscan](https://sepolia.etherscan.io/address/0xF8e08Bc787b5418f6346a34DA003d05d33F1Af2b)
