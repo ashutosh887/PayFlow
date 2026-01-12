@@ -57,24 +57,17 @@ export function useActivityFeed() {
         if (log.args.owner?.toLowerCase() === address?.toLowerCase()) {
           const flowType = Number(log.args.flowType)
           const typeNames = ['Milestone', 'Split', 'Recurring', 'Escrow']
-          saveActivity(address, {
+          const newActivity: ActivityItem = {
             id: `flow-${log.args.flowAddress}-${Date.now()}`,
-            type: 'flow_created',
+            type: 'flow_created' as const,
             title: 'Flow Created',
             description: `Created ${typeNames[flowType] || 'Payment'} flow`,
             time: Date.now(),
             icon: Plus,
-            status: 'completed',
-          })
-          setActivities(prev => [{
-            id: `flow-${log.args.flowAddress}-${Date.now()}`,
-            type: 'flow_created',
-            title: 'Flow Created',
-            description: `Created ${typeNames[flowType] || 'Payment'} flow`,
-            time: Date.now(),
-            icon: Plus,
-            status: 'completed',
-          }, ...prev].slice(0, 100))
+            status: 'completed' as const,
+          }
+          saveActivity(address, newActivity)
+          setActivities(prev => [newActivity, ...prev].slice(0, 100))
         }
       })
     },
@@ -89,24 +82,17 @@ export function useActivityFeed() {
       if (!address) return
       logs.forEach((log) => {
         if (log.args.approver?.toLowerCase() === address?.toLowerCase()) {
-          saveActivity(address, {
+          const newActivity: ActivityItem = {
             id: `approval-${log.args.approvalId}-${Date.now()}`,
-            type: 'approval',
+            type: 'approval' as const,
             title: 'Approval Given',
             description: `Approved request #${log.args.approvalId}`,
             time: Date.now(),
             icon: CheckCircle2,
-            status: 'completed',
-          })
-          setActivities(prev => [{
-            id: `approval-${log.args.approvalId}-${Date.now()}`,
-            type: 'approval',
-            title: 'Approval Given',
-            description: `Approved request #${log.args.approvalId}`,
-            time: Date.now(),
-            icon: CheckCircle2,
-            status: 'completed',
-          }, ...prev].slice(0, 100))
+            status: 'completed' as const,
+          }
+          saveActivity(address, newActivity)
+          setActivities(prev => [newActivity, ...prev].slice(0, 100))
         }
       })
     },
