@@ -15,6 +15,7 @@ import { useAccount } from 'wagmi'
 import { useEffect } from 'react'
 import { ContractDeploymentNotice } from '@/components/common/ContractDeploymentNotice'
 import { NetworkWarning } from '@/components/common/NetworkWarning'
+import { ContractStatus } from '@/components/common/ContractStatus'
 import { areContractsDeployed } from '@/lib/contracts'
 import { getFlowMetadata } from '@/lib/flowMetadata'
 import { usePendingApprovals } from '@/hooks/usePendingApprovals'
@@ -112,6 +113,7 @@ export default function DashboardPage() {
 
       <NetworkWarning />
       <ContractDeploymentNotice />
+      {contractsDeployed && <ContractStatus />}
 
       {!isConnected && (
         <Card className="p-6">

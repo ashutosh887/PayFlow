@@ -113,14 +113,29 @@ export default function CreateFlowPage() {
     enabled: isConnected && !!CONTRACT_ADDRESSES.FLOW_FACTORY && isSuccess && !!address,
   })
 
-  if (isSuccess && isDeploying) {
-    setIsDeploying(false)
-    setDeployError(null)
-  }
+  useEffect(() => {
+    if (isSuccess) {
+      setIsDeploying(false)
+      setDeployError(null)
+      showToast({
+        type: 'success',
+        title: 'Flow created successfully!',
+        description: 'Your payment flow has been deployed to the blockchain.',
+      })
+    }
+  }, [isSuccess, showToast])
 
-  if (error && !deployError) {
-    setDeployError(error.message || 'Failed to create flow')
-  }
+  useEffect(() => {
+    if (error && !deployError) {
+      const errorMessage = error.message || 'Failed to create flow'
+      setDeployError(errorMessage)
+      showToast({
+        type: 'error',
+        title: 'Failed to create flow',
+        description: errorMessage,
+      })
+    }
+  }, [error, deployError, showToast])
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId)
@@ -132,6 +147,15 @@ export default function CreateFlowPage() {
       return
     }
 
+    if (!flowName.trim()) {
+      showToast({
+        type: 'error',
+        title: 'Flow name required',
+        description: 'Please enter a name for your flow',
+      })
+      return
+    }
+
     setIsDeploying(true)
     setDeployError(null)
     
@@ -139,18 +163,12 @@ export default function CreateFlowPage() {
       const depositValue = (initialDeposit || '').trim()
       
       if (selectedTemplate === 'milestone') {
-        await createMilestoneFlow(depositValue)
+        await createMilestoneFlow(depositValue || '0')
       } else if (selectedTemplate === 'split') {
-        await createSplitFlow(depositValue)
+        await createSplitFlow(depositValue || '0')
       } else if (selectedTemplate === 'recurring') {
-        await createRecurringFlow(depositValue)
+        await createRecurringFlow(depositValue || '0')
       }
-      
-      showToast({
-        type: 'success',
-        title: 'Flow created successfully!',
-        description: 'Your payment flow has been deployed to the blockchain.',
-      })
     } catch (err: unknown) {
       setIsDeploying(false)
       const errorMessage = (err as Error)?.message || (err as { shortMessage?: string })?.shortMessage || 'Failed to create flow. Please try again.'

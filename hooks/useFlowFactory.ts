@@ -13,9 +13,11 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
   const { data: walletClient } = useWalletClient()
   const publicClient = usePublicClient()
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [isConfirming, setIsConfirming] = useState(false)
   const { data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash: txHash || hash,
+  const { isLoading: isConfirmingFromHash, isSuccess: isSuccessFromHash } = useWaitForTransactionReceipt({
+    hash: hash,
   })
 
   const { writeContract: writeApproval, data: approvalHash, isPending: isApprovalPending, error: approvalError } = useWriteContract()
@@ -56,11 +58,25 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
             gas: 3000000n,
           })
           setTxHash(flowHash)
+          setIsConfirming(true)
+          
+          try {
+            const receipt = await publicClient.waitForTransactionReceipt({ hash: flowHash })
+            setIsConfirming(false)
+            if (receipt.status === 'success') {
+              setIsSuccess(true)
+            }
+          } catch {
+            setIsConfirming(false)
+          }
+          
           setPendingDeposit(null)
           setNeedsApproval(false)
         }
       } catch (err: unknown) {
         console.error('Failed to create flow after approval:', err)
+        setIsConfirming(false)
+        setIsSuccess(false)
         setPendingDeposit(null)
         setNeedsApproval(false)
       }
@@ -81,6 +97,9 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
     if (!publicClient) {
       throw new Error('Public client not available')
     }
+
+    setIsSuccess(false)
+    setTxHash(null)
 
     const trimmedDeposit = (initialDeposit || '').trim()
     let depositAmount = 0n
@@ -115,6 +134,18 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
     
     let txHash: `0x${string}` | null = null
     try {
+      if (!CONTRACT_ADDRESSES.FLOW_FACTORY || !CONTRACT_ADDRESSES.MNEE_TOKEN) {
+        throw new Error('Contract addresses not configured. Please check your .env file.')
+      }
+
+      if (!CONTRACT_ADDRESSES.FLOW_FACTORY.startsWith('0x') || CONTRACT_ADDRESSES.FLOW_FACTORY.length !== 42) {
+        throw new Error(`Invalid FlowFactory address: ${CONTRACT_ADDRESSES.FLOW_FACTORY}. Expected 42 character hex address.`)
+      }
+
+      if (!CONTRACT_ADDRESSES.MNEE_TOKEN.startsWith('0x') || CONTRACT_ADDRESSES.MNEE_TOKEN.length !== 42) {
+        throw new Error(`Invalid MNEE Token address: ${CONTRACT_ADDRESSES.MNEE_TOKEN}. Expected 42 character hex address.`)
+      }
+
       txHash = await walletClient.writeContract({
         account: address,
         address: CONTRACT_ADDRESSES.FLOW_FACTORY,
@@ -124,7 +155,12 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
         gas: 3000000n,
       })
       
+      if (!txHash) {
+        throw new Error('Transaction hash not returned. Transaction may have failed.')
+      }
+      
       setTxHash(txHash)
+      setIsConfirming(true)
       
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('payflow:transaction', {
@@ -139,11 +175,24 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
         }))
       }
       
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
+      const receipt = await publicClient.waitForTransactionReceipt({ 
+        hash: txHash,
+        timeout: 120000
+      })
+      setIsConfirming(false)
+      
       if (receipt.status === 'reverted') {
         throw new Error('Transaction was reverted by the contract. This usually happens when creating flows with initial deposits. Try creating with 0 deposit first.')
       }
+      
+      if (receipt.status === 'success') {
+        setIsSuccess(true)
+      } else {
+        throw new Error('Transaction failed on-chain')
+      }
     } catch (err: unknown) {
+      setIsConfirming(false)
+      setIsSuccess(false)
       const errorMessage = (err as Error)?.message || (err as { shortMessage?: string })?.shortMessage || (err as { cause?: { message?: string } })?.cause?.message || 'Transaction failed. Please try again.'
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('payflow:transaction', {
@@ -163,7 +212,7 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
 
   useEffect(() => {
     const currentHash = txHash || hash
-    if (currentHash && isSuccess && typeof window !== 'undefined') {
+    if (currentHash && (isSuccess || isSuccessFromHash) && typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('payflow:transaction', {
         detail: {
           hash: currentHash,
@@ -174,7 +223,8 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
         }
       }))
     }
-  }, [txHash, hash, isSuccess, functionName])
+  }, [txHash, hash, isSuccess, isSuccessFromHash, functionName])
+
 
   useEffect(() => {
     const currentHash = txHash || hash
@@ -208,8 +258,8 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
   return {
     createFlow,
     hash: txHash || hash,
-    isPending: isPending || isConfirming || isApprovalPending || isApprovalConfirming || needsApproval,
-    isSuccess,
+    isPending: isPending || isConfirming || isConfirmingFromHash || isApprovalPending || isApprovalConfirming || needsApproval,
+    isSuccess: isSuccess || isSuccessFromHash,
     error: error || approvalError,
   }
 }
