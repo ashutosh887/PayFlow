@@ -37,7 +37,6 @@ export default function ApprovalPageRoute({
     try {
       await approve()
     } catch (err) {
-      console.error('Error approving:', err)
     }
   }
 

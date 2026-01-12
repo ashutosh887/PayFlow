@@ -8,7 +8,7 @@ import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import ProtectedLayout from "@/components/app/ProtectedLayout"
 import config from "@/config"
-import { LayoutDashboard, Workflow, FileText, Activity, Settings } from "lucide-react"
+import { LayoutDashboard, Workflow, FileText, Activity, Settings, History } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAccount } from "wagmi"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,7 @@ const navItems = [
   { href: "/app/flows/new", label: "Create Flow", icon: Workflow },
   { href: "/app/templates", label: "Templates", icon: FileText },
   { href: "/app/activity", label: "Activity", icon: Activity },
+  { href: "/app/history", label: "History", icon: History },
 ]
 
 export default function AppLayout({

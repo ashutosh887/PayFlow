@@ -80,13 +80,6 @@ export default function CreateFlowPage() {
 
     try {
       const depositValue = (initialDeposit || '').trim()
-      console.log('Deploying flow - Input state:', initialDeposit, 'Trimmed:', depositValue)
-      
-      if (!depositValue || depositValue === '0' || depositValue === '0.0' || depositValue === '0.00') {
-        console.log('No deposit specified, creating flow with 0')
-      } else {
-        console.log('Creating flow with deposit:', depositValue)
-      }
       
       if (selectedTemplate === 'milestone') {
         await createMilestoneFlow(depositValue)
@@ -96,7 +89,6 @@ export default function CreateFlowPage() {
         await createRecurringFlow(depositValue)
       }
     } catch (err) {
-      console.error('Error creating flow:', err)
     }
   }
 

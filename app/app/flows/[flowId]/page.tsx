@@ -122,7 +122,6 @@ export default function FlowDetailsPage({
       setNewMilestoneRecipient('')
       setShowAddMilestone(false)
     } catch (err) {
-      console.error('Error adding milestone:', err)
     }
   }
 
@@ -142,7 +141,6 @@ export default function FlowDetailsPage({
       setNewSplitPercentage('')
       setShowAddSplit(false)
     } catch (err) {
-      console.error('Error adding split:', err)
     }
   }
 
@@ -150,7 +148,6 @@ export default function FlowDetailsPage({
     try {
       await executeSplit()
     } catch (err) {
-      console.error('Error executing split:', err)
     }
   }
 

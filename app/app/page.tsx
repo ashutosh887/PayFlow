@@ -35,7 +35,7 @@ function FlowCardWrapper({ flowAddress }: { flowAddress: string }) {
     0: 'active',
     1: 'paused',
     2: 'completed',
-    3: 'completed', // cancelled
+    3: 'completed',
   }
 
   const flowTypeMap: Record<number, string> = {
