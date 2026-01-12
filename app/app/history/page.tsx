@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { 
   CheckCircle2, 
   XCircle, 
@@ -72,13 +73,16 @@ export default function HistoryPage() {
   const publicClient = usePublicClient()
   const [transactions, setTransactions] = useState<TransactionHistory[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
 
   useEffect(() => {
     if (!address) {
       setTransactions([])
+      setIsInitialLoading(false)
       return
     }
 
+    setIsInitialLoading(true)
     const stored = localStorage.getItem(`${TRANSACTION_STORAGE_KEY}_${address}`)
     if (stored) {
       try {
@@ -88,6 +92,7 @@ export default function HistoryPage() {
         setTransactions([])
       }
     }
+    setIsInitialLoading(false)
   }, [address])
 
   const saveTransaction = (tx: TransactionHistory) => {
@@ -184,10 +189,7 @@ export default function HistoryPage() {
     return (
       <div className="w-full">
         <div className="h-16 px-4 flex items-center">
-          <div>
-            <h1 className="text-xl font-bold mb-1">Transaction History</h1>
-            <p className="text-sm text-muted-foreground">View all your transaction attempts</p>
-          </div>
+          <p className="text-sm text-muted-foreground">View all your transaction attempts</p>
         </div>
         <div className="pt-6 px-4">
           <Card className="p-6">
@@ -203,10 +205,7 @@ export default function HistoryPage() {
   return (
     <div className="w-full">
       <div className="h-16 px-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold mb-1">Transaction History</h1>
-          <p className="text-sm text-muted-foreground">View all your transaction attempts (successful and failed)</p>
-        </div>
+        <p className="text-sm text-muted-foreground">View all your transaction attempts (successful and failed)</p>
         <Button
           variant="outline"
           size="sm"
@@ -224,7 +223,26 @@ export default function HistoryPage() {
 
       <div className="pt-6 px-4">
         <Card className="p-6">
-          {transactions.length === 0 ? (
+          {isInitialLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i}>
+                  <div className="flex items-start gap-4">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                  {i < 3 && <Separator className="mt-4" />}
+                </div>
+              ))}
+            </div>
+          ) : transactions.length === 0 ? (
             <div className="text-center py-12 space-y-4">
               <Clock className="h-12 w-12 text-muted-foreground mx-auto" />
               <div>

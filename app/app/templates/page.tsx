@@ -13,12 +13,9 @@ export default function TemplatesPage() {
   return (
     <div className="w-full">
       <div className="h-16 px-4 flex items-center">
-        <div>
-          <h1 className="text-xl font-bold mb-1">Templates</h1>
-          <p className="text-sm text-muted-foreground">
-            Start with a pre-built template or create your own custom flow
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          Start with a pre-built template or create your own custom flow
+        </p>
       </div>
 
       <div className="pt-6 px-4">

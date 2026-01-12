@@ -5,7 +5,8 @@ export const dynamic = 'force-dynamic'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Send, CheckCircle2, Plus, Clock, Loader2 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Send, CheckCircle2, Plus, Clock } from 'lucide-react'
 import { useAccount } from 'wagmi'
 import { useEffect, useState } from 'react'
 import { useWatchContractEvent } from 'wagmi'
@@ -53,12 +54,9 @@ export default function ActivityPage() {
     return (
       <div className="w-full">
         <div className="h-16 px-4 flex items-center">
-          <div>
-            <h1 className="text-xl font-bold mb-1">Activity</h1>
-            <p className="text-sm text-muted-foreground">
-              View all your payment flow activities and events
-            </p>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            View all your payment flow activities and events
+          </p>
         </div>
 
         <div className="pt-6 px-4">
@@ -75,12 +73,9 @@ export default function ActivityPage() {
   return (
     <div className="w-full">
       <div className="h-16 px-4 flex items-center">
-        <div>
-          <h1 className="text-xl font-bold mb-1">Activity</h1>
-          <p className="text-sm text-muted-foreground">
-            View all your payment flow activities and events
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          View all your payment flow activities and events
+        </p>
       </div>
 
       <div className="pt-6 px-4">

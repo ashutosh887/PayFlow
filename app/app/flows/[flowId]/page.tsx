@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   ArrowLeft,
   Pause,
@@ -161,12 +162,35 @@ export default function FlowDetailsPage({
               Back
             </Button>
           </Link>
-          <h1 className="text-xl font-bold">Flow Details</h1>
+          <p className="text-sm text-muted-foreground">View and manage your payment flow</p>
         </div>
-        <div className="pt-6 px-4">
+        <div className="pt-6 space-y-6 px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="p-6">
+              <Skeleton className="h-4 w-16 mb-2" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+            </Card>
+            <Card className="p-6">
+              <Skeleton className="h-4 w-20 mb-2" />
+              <Skeleton className="h-8 w-32" />
+            </Card>
+            <Card className="p-6">
+              <Skeleton className="h-4 w-20 mb-2" />
+              <Skeleton className="h-8 w-32" />
+            </Card>
+          </div>
           <Card className="p-6">
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Skeleton className="h-6 w-40 mb-4" />
+            <div className="space-y-4">
+              <div>
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+              <Skeleton className="h-px w-full" />
+              <div>
+                <Skeleton className="h-4 w-16 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </div>
             </div>
           </Card>
         </div>
@@ -183,10 +207,7 @@ export default function FlowDetailsPage({
             Back
           </Button>
         </Link>
-        <div>
-          <h1 className="text-xl font-bold">Flow Details</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">View and manage your payment flow</p>
-        </div>
+        <p className="text-sm text-muted-foreground">View and manage your payment flow</p>
       </div>
 
       <div className="pt-6 space-y-6 px-4">

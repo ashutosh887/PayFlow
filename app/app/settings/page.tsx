@@ -48,12 +48,9 @@ export default function SettingsPage() {
   return (
     <div className="w-full">
       <div className="h-16 px-4 flex items-center">
-        <div>
-          <h1 className="text-xl font-bold mb-1">Settings</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage your account and preferences
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          Manage your account and preferences
+        </p>
       </div>
 
       <div className="pt-6 space-y-6 px-4">

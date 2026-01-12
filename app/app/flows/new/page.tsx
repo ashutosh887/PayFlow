@@ -34,6 +34,7 @@ export default function CreateFlowPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
   const [initialDeposit, setInitialDeposit] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [isDeploying, setIsDeploying] = useState(false)
 
   useEffect(() => {
     const templateParam = searchParams.get('template')
@@ -64,9 +65,15 @@ export default function CreateFlowPage() {
     error: errorRecurring,
   } = useCreateRecurringFlow()
 
-  const isPending = isPendingMilestone || isPendingSplit || isPendingRecurring
+  const isPending = isPendingMilestone || isPendingSplit || isPendingRecurring || isDeploying
   const isSuccess = isSuccessMilestone || isSuccessSplit || isSuccessRecurring
   const error = errorMilestone || errorSplit || errorRecurring
+
+  useEffect(() => {
+    if (isSuccess) {
+      setIsDeploying(false)
+    }
+  }, [isSuccess])
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId)
@@ -74,10 +81,12 @@ export default function CreateFlowPage() {
   }
 
   const handleDeploy = async () => {
-    if (!selectedTemplate) {
+    if (!selectedTemplate || isPending) {
       return
     }
 
+    setIsDeploying(true)
+    
     try {
       const depositValue = (initialDeposit || '').trim()
       
@@ -89,6 +98,7 @@ export default function CreateFlowPage() {
         await createRecurringFlow(depositValue)
       }
     } catch (err) {
+      setIsDeploying(false)
     }
   }
 
@@ -96,10 +106,7 @@ export default function CreateFlowPage() {
     return (
       <div className="w-full">
         <div className="h-16 px-4 flex items-center">
-          <div>
-            <h1 className="text-xl font-bold mb-1">Flow Created</h1>
-            <p className="text-sm text-muted-foreground">Your payment flow has been deployed</p>
-          </div>
+          <p className="text-sm text-muted-foreground">Your payment flow has been deployed</p>
         </div>
         <div className="pt-6 px-4">
           <Card className="p-8">
@@ -129,10 +136,7 @@ export default function CreateFlowPage() {
     return (
       <div className="w-full">
         <div className="h-16 px-4 flex items-center">
-          <div>
-            <h1 className="text-xl font-bold mb-1">Create Payment Flow</h1>
-            <p className="text-sm text-muted-foreground">Connect your wallet to get started</p>
-          </div>
+          <p className="text-sm text-muted-foreground">Connect your wallet to get started</p>
         </div>
         <div className="pt-6 px-4">
           <Card className="p-8">
@@ -152,10 +156,7 @@ export default function CreateFlowPage() {
   return (
     <div className="w-full">
       <div className="h-16 px-4 flex items-center">
-        <div>
-          <h1 className="text-xl font-bold mb-1">Create Payment Flow</h1>
-          <p className="text-sm text-muted-foreground">Choose a template to get started</p>
-        </div>
+        <p className="text-sm text-muted-foreground">Choose a template to get started</p>
       </div>
 
       <div className="pt-6 px-4">
@@ -211,6 +212,7 @@ export default function CreateFlowPage() {
                 placeholder="0.00"
                 value={initialDeposit}
                 onChange={(e) => setInitialDeposit(e.target.value)}
+                disabled={isPending}
                 className="mt-1"
               />
               <div className="mt-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
