@@ -7,9 +7,17 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useAccount, useDisconnect } from 'wagmi'
 import { useAccountModal } from '@rainbow-me/rainbowkit'
-import { Copy, CheckCircle2, LogOut } from 'lucide-react'
-import { useState } from 'react'
+import { Copy, CheckCircle2, LogOut, Moon, Sun, Monitor } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export default function SettingsPage() {
   const { address, isConnected } = useAccount()
@@ -17,6 +25,12 @@ export default function SettingsPage() {
   const { openAccountModal } = useAccountModal()
   const [copied, setCopied] = useState(false)
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const copyAddress = () => {
     if (address) {
@@ -96,6 +110,39 @@ export default function SettingsPage() {
           <div>
             <div className="text-sm text-muted-foreground mb-2">Notifications</div>
             <div className="text-sm">Email notifications for approvals and payments</div>
+          </div>
+          <Separator />
+          <div>
+            <div className="text-sm text-muted-foreground mb-2">Theme</div>
+            {mounted ? (
+              <Select value={theme} onValueChange={setTheme}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select theme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">
+                    <div className="flex items-center gap-2">
+                      <Sun className="h-4 w-4" />
+                      <span>Light</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="dark">
+                    <div className="flex items-center gap-2">
+                      <Moon className="h-4 w-4" />
+                      <span>Dark</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="system">
+                    <div className="flex items-center gap-2">
+                      <Monitor className="h-4 w-4" />
+                      <span>System</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="text-sm">Loading...</div>
+            )}
           </div>
           <Separator />
           <div>
