@@ -7,7 +7,7 @@ import config from "@/config";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/common/ModeToggle";
 import { ConnectWallet } from "@/components/common/ConnectWallet";
-import Link from "next/link";
+import { useConnectModal } from '@rainbow-me/rainbowkit'
 import { useSafeAccount } from "@/hooks/useSafeAccount";
 
 export const dynamic = 'force-dynamic'
@@ -16,6 +16,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const { isConnected } = useSafeAccount()
+  const { openConnectModal } = useConnectModal()
 
   useEffect(() => {
     setMounted(true)
@@ -26,6 +27,14 @@ export default function Home() {
       router.push('/app')
     }
   }, [mounted, isConnected, router])
+
+  const handleGetStarted = () => {
+    if (isConnected) {
+      router.push('/app')
+    } else {
+      openConnectModal?.()
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -71,11 +80,13 @@ export default function Home() {
             </p>
 
             <div className="flex items-center justify-center gap-4 pt-4">
-              <Link href="/app">
-                <Button size="lg" className="rounded-full px-8">
-                  Get Started
-                </Button>
-              </Link>
+              <Button 
+                size="lg" 
+                className="rounded-full px-8"
+                onClick={handleGetStarted}
+              >
+                Get Started
+              </Button>
 
               <Button size="lg" variant="outline" className="rounded-full px-8">
                 View Demo
