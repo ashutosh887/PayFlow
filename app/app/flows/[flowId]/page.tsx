@@ -15,16 +15,13 @@ import {
   Play,
   Trash2,
   Loader2,
-  CheckCircle2,
-  Clock,
   AlertCircle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useFlowData, usePauseFlow, useResumeFlow, useCancelFlow, useAddMilestone, useAddSplit, useExecuteSplitPayment, useFlowSplits, useDepositToFlow, useMarkMilestoneComplete, useExecuteMilestonePayment } from '@/hooks/usePaymentFlow'
-import { formatUnits, parseUnits } from 'viem'
+import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
-import { useState, useEffect, useMemo } from 'react'
-import { FlowVisualization } from '@/components/dashboard/FlowVisualization'
+import { useState, useEffect } from 'react'
 import { useFlowMilestone, useFlowSplit } from '@/hooks/useFlowMilestones'
 
 export default function FlowDetailsPage({
@@ -37,8 +34,6 @@ export default function FlowDetailsPage({
   const { status, totalAmount, remainingAmount, flowType, owner, milestoneCount, isLoading } =
     useFlowData(flowAddress)
 
-  const [milestones, setMilestones] = useState<any[]>([])
-  const [splits, setSplits] = useState<any[]>([])
   const [showAddMilestone, setShowAddMilestone] = useState(false)
   const [newMilestoneAmount, setNewMilestoneAmount] = useState('')
   const [newMilestoneRecipient, setNewMilestoneRecipient] = useState('')
@@ -47,12 +42,12 @@ export default function FlowDetailsPage({
   const [newSplitRecipient, setNewSplitRecipient] = useState('')
   const [newSplitPercentage, setNewSplitPercentage] = useState('')
 
-  const { pause, isPending: isPendingPause, isSuccess: isPauseSuccess } = usePauseFlow(flowAddress)
-  const { resume, isPending: isPendingResume, isSuccess: isResumeSuccess } = useResumeFlow(flowAddress)
-  const { cancel, isPending: isPendingCancel, isSuccess: isCancelSuccess } = useCancelFlow(flowAddress)
+  const { pause, isPending: isPendingPause } = usePauseFlow(flowAddress)
+  const { resume, isPending: isPendingResume } = useResumeFlow(flowAddress)
+  const { cancel, isPending: isPendingCancel } = useCancelFlow(flowAddress)
   const { addMilestone, isPending: isPendingAdd, isSuccess: isAddSuccess } = useAddMilestone(flowAddress)
   const { addSplit, isPending: isPendingAddSplit, isSuccess: isAddSplitSuccess } = useAddSplit(flowAddress)
-  const { executeSplit, isPending: isPendingExecuteSplit, isSuccess: isExecuteSplitSuccess } = useExecuteSplitPayment(flowAddress)
+  const { executeSplit, isPending: isPendingExecuteSplit } = useExecuteSplitPayment(flowAddress)
   const { deposit, isPending: isPendingDeposit, isSuccess: isDepositSuccess } = useDepositToFlow(flowAddress)
   const { markComplete, isPending: isPendingMark, isSuccess: isMarkSuccess } = useMarkMilestoneComplete(flowAddress)
   const { executePayment, isPending: isPendingExecute, isSuccess: isExecuteSuccess } = useExecuteMilestonePayment(flowAddress)
@@ -105,7 +100,7 @@ export default function FlowDetailsPage({
       setNewMilestoneAmount('')
       setNewMilestoneRecipient('')
       setShowAddMilestone(false)
-    } catch (err) {
+    } catch {
     }
   }
 
@@ -124,23 +119,21 @@ export default function FlowDetailsPage({
       setNewSplitRecipient('')
       setNewSplitPercentage('')
       setShowAddSplit(false)
-    } catch (err) {
+    } catch {
     }
   }
 
   const handleMarkComplete = async (milestoneId: number) => {
     try {
       await markComplete(milestoneId)
-    } catch (err) {
-      console.error('Failed to mark milestone complete:', err)
+    } catch {
     }
   }
 
   const handleExecutePayment = async (milestoneId: number) => {
     try {
       await executePayment(milestoneId)
-    } catch (err) {
-      console.error('Failed to execute payment:', err)
+    } catch {
     }
   }
 
@@ -150,15 +143,14 @@ export default function FlowDetailsPage({
       await deposit(depositAmount)
       setDepositAmount('')
       setShowDeposit(false)
-    } catch (err) {
-      console.error('Failed to deposit:', err)
+    } catch {
     }
   }
 
   const handleExecuteSplit = async () => {
     try {
       await executeSplit()
-    } catch (err) {
+    } catch {
     }
   }
 
@@ -418,12 +410,6 @@ export default function FlowDetailsPage({
 
         {flowType === 0 && (
           <>
-            {milestones.length > 0 && (
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Flow Visualization</h2>
-                <FlowVisualization milestones={milestones} flowType={flowType} />
-              </Card>
-            )}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">Milestones</h2>
@@ -512,12 +498,6 @@ export default function FlowDetailsPage({
 
         {flowType === 1 && (
           <>
-            {splits.length > 0 && (
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Flow Visualization</h2>
-                <FlowVisualization milestones={[]} flowType={flowType} splits={splits} />
-              </Card>
-            )}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">Revenue Splits</h2>

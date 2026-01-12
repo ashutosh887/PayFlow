@@ -1,9 +1,8 @@
 'use client'
 
 import { Card } from '@/components/ui/card'
-import { AlertCircle, ExternalLink } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { areContractsDeployed } from '@/lib/contracts'
-import Link from 'next/link'
 
 export function ContractDeploymentNotice() {
   if (areContractsDeployed()) {

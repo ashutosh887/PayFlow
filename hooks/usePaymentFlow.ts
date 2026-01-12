@@ -1,25 +1,8 @@
 'use client'
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { CONTRACT_ADDRESSES, PAYMENT_FLOW_ABI } from '@/lib/contracts'
-import { Address, formatUnits, parseUnits } from 'viem'
-
-export interface FlowData {
-  address: Address
-  status: number
-  totalAmount: bigint
-  remainingAmount: bigint
-  flowType: number
-  owner: Address
-  milestoneCount: number
-  milestones: Array<{
-    milestoneId: bigint
-    amount: bigint
-    recipient: Address
-    completed: boolean
-    paid: boolean
-  }>
-}
+import { PAYMENT_FLOW_ABI } from '@/lib/contracts'
+import { Address, parseUnits } from 'viem'
 
 export function useFlowData(flowAddress: Address | undefined) {
   const { data: status, isLoading: isLoadingStatus } = useReadContract({
@@ -80,20 +63,6 @@ export function useFlowData(flowAddress: Address | undefined) {
     owner: owner ?? '0x',
     milestoneCount: milestoneCount ? Number(milestoneCount) : 0,
     isLoading,
-  }
-}
-
-export function useFlowMilestones(flowAddress: Address | undefined, count: number) {
-  const milestoneQueries = Array.from({ length: count }, (_, i) => ({
-    address: flowAddress,
-    abi: PAYMENT_FLOW_ABI,
-    functionName: 'milestones' as const,
-    args: [BigInt(i)],
-    query: { enabled: !!flowAddress && count > 0 },
-  }))
-
-  return {
-    milestoneCount: count,
   }
 }
 

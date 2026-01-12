@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { useCreateMilestoneFlow, useCreateSplitFlow, useCreateRecurringFlow } from '@/hooks/useFlowFactory'
 import { useAccount } from 'wagmi'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -28,22 +28,15 @@ const templates = [
 ]
 
 export default function CreateFlowPage() {
-  const { address, isConnected } = useAccount()
-  const router = useRouter()
+  const { isConnected } = useAccount()
   const searchParams = useSearchParams()
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  const templateParam = searchParams.get('template')
+  const initialTemplate = templateParam && templates.some(t => t.id === templateParam) ? templateParam : null
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(initialTemplate)
   const [initialDeposit, setInitialDeposit] = useState('')
-  const [showForm, setShowForm] = useState(false)
+  const [showForm, setShowForm] = useState(!!initialTemplate)
   const [isDeploying, setIsDeploying] = useState(false)
   const [deployError, setDeployError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const templateParam = searchParams.get('template')
-    if (templateParam && templates.some(t => t.id === templateParam)) {
-      setSelectedTemplate(templateParam)
-      setShowForm(true)
-    }
-  }, [searchParams])
 
   const {
     createFlow: createMilestoneFlow,
@@ -70,18 +63,14 @@ export default function CreateFlowPage() {
   const isSuccess = isSuccessMilestone || isSuccessSplit || isSuccessRecurring
   const error = errorMilestone || errorSplit || errorRecurring
 
-  useEffect(() => {
-    if (isSuccess) {
-      setIsDeploying(false)
-      setDeployError(null)
-    }
-  }, [isSuccess])
+  if (isSuccess && isDeploying) {
+    setIsDeploying(false)
+    setDeployError(null)
+  }
 
-  useEffect(() => {
-    if (error) {
-      setDeployError(error.message || 'Failed to create flow')
-    }
-  }, [error])
+  if (error && !deployError) {
+    setDeployError(error.message || 'Failed to create flow')
+  }
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId)
@@ -106,9 +95,9 @@ export default function CreateFlowPage() {
       } else if (selectedTemplate === 'recurring') {
         await createRecurringFlow(depositValue)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsDeploying(false)
-      const errorMessage = err?.message || err?.shortMessage || 'Failed to create flow. Please try again.'
+      const errorMessage = (err as Error)?.message || (err as { shortMessage?: string })?.shortMessage || 'Failed to create flow. Please try again.'
       setDeployError(errorMessage)
     }
   }

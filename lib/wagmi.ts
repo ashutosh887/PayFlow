@@ -28,7 +28,7 @@ export function getWagmiConfig(): Config {
     wagmiConfig = getDefaultConfig({
       appName: 'PayFlow',
       projectId: projectId || '00000000000000000000000000000000',
-      chains: [mainnet, sepolia] as any,
+      chains: [mainnet, sepolia] as [typeof mainnet, typeof sepolia],
       ssr: true,
       transports: {
         [mainnet.id]: http(),

@@ -5,7 +5,6 @@ import { CONTRACT_ADDRESSES, FLOW_FACTORY_ABI, MNEE_TOKEN_ABI } from '@/lib/cont
 import { parseUnits, maxUint256 } from 'viem'
 import { useAccount } from 'wagmi'
 import { useEffect, useState } from 'react'
-import type { Address } from 'viem'
 
 type FlowFunctionName = 'createMilestoneFlow' | 'createSplitFlow' | 'createRecurringFlow'
 
@@ -14,7 +13,7 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
   const { data: walletClient } = useWalletClient()
   const publicClient = usePublicClient()
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null)
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
+  const { data: hash, isPending, error } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash || hash,
   })
@@ -60,7 +59,7 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
           setPendingDeposit(null)
           setNeedsApproval(false)
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to create flow after approval:', err)
         setPendingDeposit(null)
         setNeedsApproval(false)
@@ -94,6 +93,7 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
       }
     }
     
+    // Check if token approval is needed
     if (depositAmount > 0n) {
       const currentAllowance = (allowance as bigint) || 0n
       if (currentAllowance < depositAmount) {
@@ -143,8 +143,8 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
       if (receipt.status === 'reverted') {
         throw new Error('Transaction was reverted by the contract. This usually happens when creating flows with initial deposits. Try creating with 0 deposit first.')
       }
-    } catch (err: any) {
-      const errorMessage = err?.message || err?.shortMessage || err?.cause?.message || 'Transaction failed. Please try again.'
+    } catch (err: unknown) {
+      const errorMessage = (err as Error)?.message || (err as { shortMessage?: string })?.shortMessage || (err as { cause?: { message?: string } })?.cause?.message || 'Transaction failed. Please try again.'
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('payflow:transaction', {
           detail: {
@@ -181,7 +181,7 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
     if (currentHash && error && typeof window !== 'undefined') {
       let errorMessage = 'Transaction failed'
       if (error && typeof error === 'object') {
-        errorMessage = (error as any).message || (error as any).shortMessage || String(error)
+        errorMessage = (error as { message?: string }).message || (error as { shortMessage?: string }).shortMessage || String(error)
       } else if (error) {
         errorMessage = String(error)
       }
@@ -232,15 +232,6 @@ export function useFlowsByOwner() {
   const factoryAddress = CONTRACT_ADDRESSES.FLOW_FACTORY
   const hasFactory = !!factoryAddress && factoryAddress.length > 2 && factoryAddress.startsWith('0x')
 
-  if (!hasFactory) {
-    return {
-      flows: [],
-      isLoading: false,
-      error: new Error('FlowFactory contract address not configured'),
-      refetch: () => {},
-    }
-  }
-
   const { data: flows, isLoading, error, refetch } = useReadContract({
     address: factoryAddress,
     abi: FLOW_FACTORY_ABI,
@@ -252,6 +243,15 @@ export function useFlowsByOwner() {
       gcTime: 0,
     },
   })
+
+  if (!hasFactory) {
+    return {
+      flows: [],
+      isLoading: false,
+      error: new Error('FlowFactory contract address not configured'),
+      refetch: () => {},
+    }
+  }
 
   const errorMessage = error?.message || ''
   const isEmptyDataError = 

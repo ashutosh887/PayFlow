@@ -12,7 +12,6 @@ interface FlowCardProps {
   status: 'active' | 'paused' | 'completed'
   totalAmount: string
   remainingAmount: string
-  nextMilestone?: string
   type: string
 }
 
@@ -22,7 +21,6 @@ export function FlowCard({
   status,
   totalAmount,
   remainingAmount,
-  nextMilestone,
   type,
 }: FlowCardProps) {
   const statusColors = {
@@ -69,11 +67,6 @@ export function FlowCard({
             MNEE
           </span>
         </div>
-        {nextMilestone && (
-          <div className="text-sm text-muted-foreground">
-            Next: {nextMilestone}
-          </div>
-        )}
       </div>
 
       <Link href={`/app/flows/${id}`}>

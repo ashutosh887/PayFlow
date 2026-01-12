@@ -3,7 +3,6 @@
 export const dynamic = 'force-dynamic'
 
 import { FlowCard } from '@/components/dashboard/FlowCard'
-import { PendingApprovalCard } from '@/components/dashboard/PendingApprovalCard'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -13,7 +12,7 @@ import { useFlowsByOwner } from '@/hooks/useFlowFactory'
 import { useFlowData } from '@/hooks/usePaymentFlow'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { ContractDeploymentNotice } from '@/components/common/ContractDeploymentNotice'
 import { areContractsDeployed } from '@/lib/contracts'
 
@@ -67,7 +66,6 @@ export default function DashboardPage() {
   const { address, isConnected } = useAccount()
   const contractsDeployed = areContractsDeployed()
   const { flows, isLoading, error, refetch } = useFlowsByOwner()
-  const [pendingApprovals, setPendingApprovals] = useState<any[]>([])
 
   useEffect(() => {
     if (isConnected && address && contractsDeployed) {
@@ -158,24 +156,6 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <div>
-            <h2 className="text-xl font-semibold mb-4">
-              Pending Approvals ({pendingApprovals.length})
-            </h2>
-            {pendingApprovals.length === 0 ? (
-              <Card className="p-6">
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No pending approvals</p>
-                </div>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pendingApprovals.map((approval) => (
-                  <PendingApprovalCard key={approval.id} {...approval} />
-                ))}
-              </div>
-            )}
-          </div>
 
           <div>
             <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>

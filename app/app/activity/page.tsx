@@ -5,13 +5,10 @@ export const dynamic = 'force-dynamic'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Send, CheckCircle2, Plus, Clock } from 'lucide-react'
-import { useAccount } from 'wagmi'
-import { useEffect, useState } from 'react'
-import { useWatchContractEvent } from 'wagmi'
-import { CONTRACT_ADDRESSES, FLOW_FACTORY_ABI, PAYMENT_FLOW_ABI } from '@/lib/contracts'
-import { formatUnits } from 'viem'
+import { Plus, Clock } from 'lucide-react'
+import { useAccount, useWatchContractEvent } from 'wagmi'
+import { useState } from 'react'
+import { CONTRACT_ADDRESSES, FLOW_FACTORY_ABI } from '@/lib/contracts'
 
 interface ActivityItem {
   id: string
@@ -19,7 +16,7 @@ interface ActivityItem {
   title: string
   description: string
   time: string
-  icon: typeof Send
+  icon: typeof Plus
   status: 'completed' | 'pending'
 }
 

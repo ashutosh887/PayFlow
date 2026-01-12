@@ -15,7 +15,7 @@ export default function ApprovalPageRoute({
 }: {
   params: { approvalId: string }
 }) {
-  const { address, isConnected } = useAccount()
+  const { isConnected } = useAccount()
   const router = useRouter()
   const [copied, setCopied] = useState(false)
   const approvalId = parseInt(params.approvalId)
@@ -36,7 +36,7 @@ export default function ApprovalPageRoute({
     if (!isConnected) return
     try {
       await approve()
-    } catch (err) {
+    } catch {
     }
   }
 

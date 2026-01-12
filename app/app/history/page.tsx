@@ -14,7 +14,6 @@ import {
   ExternalLink,
   RefreshCw,
   Loader2,
-  History
 } from 'lucide-react'
 import { useAccount, usePublicClient } from 'wagmi'
 import { useEffect, useState } from 'react'
@@ -148,15 +147,15 @@ export default function HistoryPage() {
   useEffect(() => {
     if (!isConnected || !address) return
 
-    const handleTransaction = (event: CustomEvent) => {
+    const handleTransaction = (event: CustomEvent<{ hash: string; type?: TransactionHistory['type']; functionName?: string; to?: string; amount?: string; status?: TransactionHistory['status'] }>) => {
       const { hash, type, functionName, to, amount, status } = event.detail
-      const txType = type || getTransactionType(functionName || '', to || '')
+      const txType: TransactionHistory['type'] = type || getTransactionType(functionName || '', to || '')
       const description = getTransactionDescription(txType, functionName)
       
       saveTransaction({
         hash,
         type: txType,
-        status: status || 'pending',
+        status: (status || 'pending') as TransactionHistory['status'],
         timestamp: Date.now(),
         description,
         amount,
@@ -164,9 +163,10 @@ export default function HistoryPage() {
       })
     }
 
-    window.addEventListener('payflow:transaction' as any, handleTransaction as EventListener)
+    const eventName = 'payflow:transaction' as keyof WindowEventMap
+    window.addEventListener(eventName, handleTransaction as EventListener)
     return () => {
-      window.removeEventListener('payflow:transaction' as any, handleTransaction as EventListener)
+      window.removeEventListener(eventName, handleTransaction as EventListener)
     }
   }, [isConnected, address])
 
@@ -176,7 +176,7 @@ export default function HistoryPage() {
       refreshTransactions()
     }, 10000)
     return () => clearInterval(interval)
-  }, [isConnected, address, publicClient, chainId])
+  }, [isConnected, address, publicClient, chainId, transactions.length])
 
   const getExplorerUrl = (hash: string) => {
     if (chainId === 11155111) {

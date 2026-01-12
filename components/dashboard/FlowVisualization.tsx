@@ -33,7 +33,7 @@ interface FlowVisualizationProps {
   }>
 }
 
-const MilestoneNode = ({ data }: { data: any }) => {
+const MilestoneNode = ({ data }: { data: { milestone: Milestone; index: number } }) => {
   const { milestone, index } = data
   const amount = formatUnits(milestone.amount, 18)
   
@@ -75,7 +75,7 @@ const MilestoneNode = ({ data }: { data: any }) => {
   )
 }
 
-const SplitNode = ({ data }: { data: any }) => {
+const SplitNode = ({ data }: { data: { split: { recipient: Address; percentage: number }; index: number } }) => {
   const { split, index } = data
   
   return (
