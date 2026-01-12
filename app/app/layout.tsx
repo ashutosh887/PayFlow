@@ -79,37 +79,41 @@ export default function AppLayout({
           </nav>
 
           {isConnected && address && (
-            <div className="p-4 border-t space-y-2">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
-                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-mono">{address.slice(2, 4).toUpperCase()}</span>
+            <div className="p-4 border-t bg-muted/20">
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-background/50 border border-border/50 mb-3 hover:bg-background/80 transition-colors">
+                <div className="w-9 h-9 rounded-full bg-linear-to-br from-primary/30 to-primary/10 flex items-center justify-center shrink-0 ring-2 ring-primary/20">
+                  <span className="text-xs font-bold text-primary">{address.slice(2, 4).toUpperCase()}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-mono truncate">{formatAddress(address)}</p>
+                  <p className="text-sm font-semibold truncate">{formatAddress(address)}</p>
                   <p className="text-xs text-muted-foreground">Connected</p>
                 </div>
               </div>
               <div className="flex gap-2">
+                <Link href="/app/settings" className="flex-1">
+                  <Button
+                    variant={pathname === "/app/settings" ? "default" : "outline"}
+                    size="sm"
+                    className={cn(
+                      "w-full transition-all",
+                      pathname === "/app/settings" 
+                        ? "bg-primary text-primary-foreground shadow-sm" 
+                        : "hover:bg-accent/50"
+                    )}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </Button>
+                </Link>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleDisconnect}
-                  className="flex-1"
+                  className="flex-1 transition-all border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Logout
                 </Button>
-                <Link href="/app/settings">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      pathname === "/app/settings" && "bg-primary text-primary-foreground"
-                    )}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </Link>
               </div>
             </div>
           )}
