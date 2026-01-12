@@ -1,6 +1,14 @@
 # PayFlow
 
-Visual programmable payment workflows for MNEE token. Create automated payment flows with conditions, approvals, and schedules.
+<div align="center">
+  <img src="./public/logo.png" alt="PayFlow Logo" width="120" height="120">
+  
+  **Visual Programmable Payment Workflows with MNEE**
+  
+  Build complex payment logic visually. Ship it instantly.
+  
+  *A visual layer for designing and executing programmable payment workflows.*
+</div>
 
 ## Overview
 
@@ -80,6 +88,10 @@ The app runs on [http://localhost:3000](http://localhost:3000)
 - **PaymentFlow** (implementation): [`0xa159999d149Ae8fDd082354406D191f3DA3e84aF`](https://sepolia.etherscan.io/address/0xa159999d149Ae8fDd082354406D191f3DA3e84aF)
 - **ApprovalManager**: [`0x3D23383124A4467D2394A48A7D8cbf5110d977F3`](https://sepolia.etherscan.io/address/0x3D23383124A4467D2394A48A7D8cbf5110d977F3)
 - **MNEE Token**: `0x8ccedbAe4916b79da7F3F612EfB2EB93A2bFD6cF`
+
+### Contract Documentation
+
+For detailed information about the smart contracts, see [contracts/README.md](./contracts/contracts/README.md).
 
 ### Deploy Contracts
 
