@@ -24,17 +24,16 @@ export function useCreateMilestoneFlow() {
         abi: MNEE_TOKEN_ABI,
         functionName: 'approve',
         args: [CONTRACT_ADDRESSES.FLOW_FACTORY, depositAmount],
-      })
-      
-      await new Promise((resolve) => {
-        setTimeout(resolve, 2000)
+        gas: 100000n,
       })
     }
+    
     writeContract({
       address: CONTRACT_ADDRESSES.FLOW_FACTORY,
       abi: FLOW_FACTORY_ABI,
       functionName: 'createMilestoneFlow',
       args: [CONTRACT_ADDRESSES.MNEE_TOKEN, depositAmount],
+      gas: 3000000n,
     })
   }
 
@@ -66,10 +65,7 @@ export function useCreateSplitFlow() {
         abi: MNEE_TOKEN_ABI,
         functionName: 'approve',
         args: [CONTRACT_ADDRESSES.FLOW_FACTORY, depositAmount],
-      })
-      
-      await new Promise((resolve) => {
-        setTimeout(resolve, 2000)
+        gas: 100000n,
       })
     }
 
@@ -78,6 +74,7 @@ export function useCreateSplitFlow() {
       abi: FLOW_FACTORY_ABI,
       functionName: 'createSplitFlow',
       args: [CONTRACT_ADDRESSES.MNEE_TOKEN, depositAmount],
+      gas: 3000000n,
     })
   }
 
@@ -109,10 +106,7 @@ export function useCreateRecurringFlow() {
         abi: MNEE_TOKEN_ABI,
         functionName: 'approve',
         args: [CONTRACT_ADDRESSES.FLOW_FACTORY, depositAmount],
-      })
-      
-      await new Promise((resolve) => {
-        setTimeout(resolve, 2000)
+        gas: 100000n,
       })
     }
 
@@ -121,6 +115,7 @@ export function useCreateRecurringFlow() {
       abi: FLOW_FACTORY_ABI,
       functionName: 'createRecurringFlow',
       args: [CONTRACT_ADDRESSES.MNEE_TOKEN, depositAmount],
+      gas: 3000000n,
     })
   }
 
