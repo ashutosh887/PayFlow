@@ -59,14 +59,15 @@ function FlowCardWrapper({ flowAddress }: { flowAddress: string }) {
 
 export default function DashboardPage() {
   const { address, isConnected } = useAccount()
+  const contractsDeployed = areContractsDeployed()
   const { flows, isLoading, error, refetch } = useFlowsByOwner()
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([])
 
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && address && contractsDeployed) {
       refetch()
     }
-  }, [address, isConnected, refetch])
+  }, [address, isConnected, contractsDeployed, refetch])
 
   return (
     <div className="w-full">
@@ -96,44 +97,58 @@ export default function DashboardPage() {
 
       {isConnected && (
         <>
-          <div>
-            <h2 className="text-xl font-semibold mb-4">My Flows</h2>
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i} className="p-6">
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
-                  </Card>
-                ))}
+          {!contractsDeployed ? (
+            <Card className="p-6">
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-2">Contracts not configured</p>
+                <p className="text-sm text-muted-foreground">
+                  Please configure contract addresses in your environment variables
+                </p>
               </div>
-            ) : error ? (
-              <Card className="p-6">
-                <div className="text-center py-8">
-                  <p className="text-destructive">Error loading flows: {error.message}</p>
-                  <Button onClick={() => refetch()} variant="outline" className="mt-4">
-                    Retry
-                  </Button>
+            </Card>
+          ) : (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">My Flows</h2>
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="p-6">
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-              </Card>
-            ) : flows.length === 0 ? (
-              <Card className="p-6">
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">No flows found</p>
-                  <Link href="/app/flows/new">
-                    <Button>Create Your First Flow</Button>
-                  </Link>
+              ) : error ? (
+                <Card className="p-6">
+                  <div className="text-center py-8">
+                    <p className="text-destructive mb-2">Error loading flows</p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {error.message || 'Failed to fetch flows from contract'}
+                    </p>
+                    <Button onClick={() => refetch()} variant="outline">
+                      Retry
+                    </Button>
+                  </div>
+                </Card>
+              ) : flows.length === 0 ? (
+                <Card className="p-6">
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">No flows found</p>
+                    <Link href="/app/flows/new">
+                      <Button>Create Your First Flow</Button>
+                    </Link>
+                  </div>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {flows.map((flowAddress) => (
+                    <FlowCardWrapper key={flowAddress} flowAddress={flowAddress} />
+                  ))}
                 </div>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {flows.map((flowAddress) => (
-                  <FlowCardWrapper key={flowAddress} flowAddress={flowAddress} />
-                ))}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           <div>
             <h2 className="text-xl font-semibold mb-4">
