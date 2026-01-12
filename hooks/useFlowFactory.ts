@@ -2,10 +2,38 @@
 
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useWalletClient, usePublicClient } from 'wagmi'
 import { CONTRACT_ADDRESSES, FLOW_FACTORY_ABI, MNEE_TOKEN_ABI } from '@/lib/contracts'
-import { parseUnits, formatUnits, maxUint256 } from 'viem'
+import { parseUnits, maxUint256 } from 'viem'
 import { useAccount } from 'wagmi'
+import type { Address } from 'viem'
 
-export function useCreateMilestoneFlow() {
+type FlowFunctionName = 'createMilestoneFlow' | 'createSplitFlow' | 'createRecurringFlow'
+
+async function ensureTokenApproval(
+  depositAmount: bigint,
+  address: Address,
+  walletClient: any,
+  publicClient: any,
+  refetchAllowance: () => Promise<any>
+) {
+  if (depositAmount === 0n) return
+
+  const { data: currentAllowance } = await refetchAllowance()
+  const allowanceAmount = (currentAllowance as bigint) || 0n
+
+  if (allowanceAmount < depositAmount) {
+    const approvalHash = await walletClient.writeContract({
+      account: address,
+      address: CONTRACT_ADDRESSES.MNEE_TOKEN,
+      abi: MNEE_TOKEN_ABI,
+      functionName: 'approve',
+      args: [CONTRACT_ADDRESSES.FLOW_FACTORY, maxUint256],
+    })
+    
+    await publicClient.waitForTransactionReceipt({ hash: approvalHash })
+  }
+}
+
+function useCreateFlowBase(functionName: FlowFunctionName) {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
   const publicClient = usePublicClient()
@@ -43,27 +71,12 @@ export function useCreateMilestoneFlow() {
 
     const depositAmount = initialDeposit ? parseUnits(initialDeposit, 18) : 0n
     
-    if (depositAmount > 0n) {
-      const { data: currentAllowance } = await refetchAllowance()
-      const allowanceAmount = (currentAllowance as bigint) || 0n
-
-      if (allowanceAmount < depositAmount) {
-        const approvalHash = await walletClient.writeContract({
-          account: address,
-          address: CONTRACT_ADDRESSES.MNEE_TOKEN,
-          abi: MNEE_TOKEN_ABI,
-          functionName: 'approve',
-          args: [CONTRACT_ADDRESSES.FLOW_FACTORY, maxUint256],
-        })
-        
-        await publicClient.waitForTransactionReceipt({ hash: approvalHash })
-      }
-    }
+    await ensureTokenApproval(depositAmount, address, walletClient, publicClient, refetchAllowance)
     
     writeContract({
       address: CONTRACT_ADDRESSES.FLOW_FACTORY,
       abi: FLOW_FACTORY_ABI,
-      functionName: 'createMilestoneFlow',
+      functionName,
       args: [CONTRACT_ADDRESSES.MNEE_TOKEN, depositAmount],
       gas: 3000000n,
     })
@@ -76,152 +89,18 @@ export function useCreateMilestoneFlow() {
     isSuccess,
     error,
   }
+}
+
+export function useCreateMilestoneFlow() {
+  return useCreateFlowBase('createMilestoneFlow')
 }
 
 export function useCreateSplitFlow() {
-  const { address } = useAccount()
-  const { data: walletClient } = useWalletClient()
-  const publicClient = usePublicClient()
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  })
-
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: CONTRACT_ADDRESSES.MNEE_TOKEN,
-    abi: MNEE_TOKEN_ABI,
-    functionName: 'allowance',
-    args: address && CONTRACT_ADDRESSES.FLOW_FACTORY ? [address, CONTRACT_ADDRESSES.FLOW_FACTORY] : undefined,
-    query: {
-      enabled: !!address && !!CONTRACT_ADDRESSES.FLOW_FACTORY,
-    },
-  })
-
-  const createFlow = async (initialDeposit: string) => {
-    if (!CONTRACT_ADDRESSES.FLOW_FACTORY) {
-      throw new Error('FlowFactory address not configured')
-    }
-
-    if (!address) {
-      throw new Error('Wallet not connected')
-    }
-
-    if (!walletClient) {
-      throw new Error('Wallet client not available')
-    }
-
-    if (!publicClient) {
-      throw new Error('Public client not available')
-    }
-
-    const depositAmount = initialDeposit ? parseUnits(initialDeposit, 18) : 0n
-
-    if (depositAmount > 0n) {
-      const { data: currentAllowance } = await refetchAllowance()
-      const allowanceAmount = (currentAllowance as bigint) || 0n
-
-      if (allowanceAmount < depositAmount) {
-        const approvalHash = await walletClient.writeContract({
-          account: address,
-          address: CONTRACT_ADDRESSES.MNEE_TOKEN,
-          abi: MNEE_TOKEN_ABI,
-          functionName: 'approve',
-          args: [CONTRACT_ADDRESSES.FLOW_FACTORY, maxUint256],
-        })
-        
-        await publicClient.waitForTransactionReceipt({ hash: approvalHash })
-      }
-    }
-
-    writeContract({
-      address: CONTRACT_ADDRESSES.FLOW_FACTORY,
-      abi: FLOW_FACTORY_ABI,
-      functionName: 'createSplitFlow',
-      args: [CONTRACT_ADDRESSES.MNEE_TOKEN, depositAmount],
-      gas: 3000000n,
-    })
-  }
-
-  return {
-    createFlow,
-    hash,
-    isPending: isPending || isConfirming,
-    isSuccess,
-    error,
-  }
+  return useCreateFlowBase('createSplitFlow')
 }
 
 export function useCreateRecurringFlow() {
-  const { address } = useAccount()
-  const { data: walletClient } = useWalletClient()
-  const publicClient = usePublicClient()
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  })
-
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: CONTRACT_ADDRESSES.MNEE_TOKEN,
-    abi: MNEE_TOKEN_ABI,
-    functionName: 'allowance',
-    args: address && CONTRACT_ADDRESSES.FLOW_FACTORY ? [address, CONTRACT_ADDRESSES.FLOW_FACTORY] : undefined,
-    query: {
-      enabled: !!address && !!CONTRACT_ADDRESSES.FLOW_FACTORY,
-    },
-  })
-
-  const createFlow = async (initialDeposit: string) => {
-    if (!CONTRACT_ADDRESSES.FLOW_FACTORY) {
-      throw new Error('FlowFactory address not configured')
-    }
-
-    if (!address) {
-      throw new Error('Wallet not connected')
-    }
-
-    if (!walletClient) {
-      throw new Error('Wallet client not available')
-    }
-
-    if (!publicClient) {
-      throw new Error('Public client not available')
-    }
-
-    const depositAmount = initialDeposit ? parseUnits(initialDeposit, 18) : 0n
-
-    if (depositAmount > 0n) {
-      const { data: currentAllowance } = await refetchAllowance()
-      const allowanceAmount = (currentAllowance as bigint) || 0n
-
-      if (allowanceAmount < depositAmount) {
-        const approvalHash = await walletClient.writeContract({
-          account: address,
-          address: CONTRACT_ADDRESSES.MNEE_TOKEN,
-          abi: MNEE_TOKEN_ABI,
-          functionName: 'approve',
-          args: [CONTRACT_ADDRESSES.FLOW_FACTORY, maxUint256],
-        })
-        
-        await publicClient.waitForTransactionReceipt({ hash: approvalHash })
-      }
-    }
-
-    writeContract({
-      address: CONTRACT_ADDRESSES.FLOW_FACTORY,
-      abi: FLOW_FACTORY_ABI,
-      functionName: 'createRecurringFlow',
-      args: [CONTRACT_ADDRESSES.MNEE_TOKEN, depositAmount],
-      gas: 3000000n,
-    })
-  }
-
-  return {
-    createFlow,
-    hash,
-    isPending: isPending || isConfirming,
-    isSuccess,
-    error,
-  }
+  return useCreateFlowBase('createRecurringFlow')
 }
 
 export function useFlowsByOwner() {
