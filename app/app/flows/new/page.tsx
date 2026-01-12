@@ -35,6 +35,7 @@ export default function CreateFlowPage() {
   const [initialDeposit, setInitialDeposit] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [isDeploying, setIsDeploying] = useState(false)
+  const [deployError, setDeployError] = useState<string | null>(null)
 
   useEffect(() => {
     const templateParam = searchParams.get('template')
@@ -72,8 +73,15 @@ export default function CreateFlowPage() {
   useEffect(() => {
     if (isSuccess) {
       setIsDeploying(false)
+      setDeployError(null)
     }
   }, [isSuccess])
+
+  useEffect(() => {
+    if (error) {
+      setDeployError(error.message || 'Failed to create flow')
+    }
+  }, [error])
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId)
@@ -86,6 +94,7 @@ export default function CreateFlowPage() {
     }
 
     setIsDeploying(true)
+    setDeployError(null)
     
     try {
       const depositValue = (initialDeposit || '').trim()
@@ -97,8 +106,10 @@ export default function CreateFlowPage() {
       } else if (selectedTemplate === 'recurring') {
         await createRecurringFlow(depositValue)
       }
-    } catch (err) {
+    } catch (err: any) {
       setIsDeploying(false)
+      const errorMessage = err?.message || err?.shortMessage || 'Failed to create flow. Please try again.'
+      setDeployError(errorMessage)
     }
   }
 
@@ -224,15 +235,20 @@ export default function CreateFlowPage() {
               </div>
             </div>
 
-            {error && (
+            {(error || deployError) && (
               <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
                 <div className="flex items-center gap-2 text-destructive">
                   <AlertCircle className="h-4 w-4" />
                   <span className="text-sm font-medium">Error</span>
                 </div>
                 <p className="text-sm text-destructive/80 mt-1">
-                  {error.message || 'Failed to create flow. Please try again.'}
+                  {error?.message || deployError || 'Failed to create flow. Please try again.'}
                 </p>
+                {(error?.message || deployError)?.includes('reverted') && (
+                  <p className="text-xs text-destructive/60 mt-2">
+                    💡 Tip: Try creating the flow with 0 deposit first, then add funds after creation.
+                  </p>
+                )}
               </div>
             )}
 

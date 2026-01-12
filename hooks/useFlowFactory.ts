@@ -4,7 +4,7 @@ import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useWal
 import { CONTRACT_ADDRESSES, FLOW_FACTORY_ABI, MNEE_TOKEN_ABI } from '@/lib/contracts'
 import { parseUnits, maxUint256 } from 'viem'
 import { useAccount } from 'wagmi'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { Address } from 'viem'
 
 type FlowFunctionName = 'createMilestoneFlow' | 'createSplitFlow' | 'createRecurringFlow'
@@ -47,9 +47,10 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
   const publicClient = usePublicClient()
+  const [txHash, setTxHash] = useState<`0x${string}` | null>(null)
   const { writeContract, data: hash, isPending, error } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
+    hash: txHash || hash,
   })
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
@@ -94,34 +95,60 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
       await ensureTokenApproval(depositAmount, address, walletClient, publicClient, refetchAllowance)
     }
     
-    writeContract({
-      address: CONTRACT_ADDRESSES.FLOW_FACTORY,
-      abi: FLOW_FACTORY_ABI,
-      functionName,
-      args: [CONTRACT_ADDRESSES.MNEE_TOKEN, depositAmount],
-      gas: 3000000n,
-    })
+    let txHash: `0x${string}` | null = null
+    try {
+      txHash = await walletClient.writeContract({
+        account: address,
+        address: CONTRACT_ADDRESSES.FLOW_FACTORY,
+        abi: FLOW_FACTORY_ABI,
+        functionName,
+        args: [CONTRACT_ADDRESSES.MNEE_TOKEN, depositAmount],
+        gas: 3000000n,
+      })
+      
+      setTxHash(txHash)
+      
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('payflow:transaction', {
+          detail: {
+            hash: txHash,
+            type: 'flow_creation',
+            functionName,
+            to: CONTRACT_ADDRESSES.FLOW_FACTORY,
+            amount: depositAmount > 0n ? (Number(depositAmount) / 1e18).toString() : undefined,
+            status: 'pending'
+          }
+        }))
+      }
+      
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
+      if (receipt.status === 'reverted') {
+        throw new Error('Transaction was reverted by the contract. This usually happens when creating flows with initial deposits. Try creating with 0 deposit first.')
+      }
+    } catch (err: any) {
+      const errorMessage = err?.message || err?.shortMessage || err?.cause?.message || 'Transaction failed. Please try again.'
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('payflow:transaction', {
+          detail: {
+            hash: txHash || '',
+            type: 'flow_creation',
+            functionName,
+            to: CONTRACT_ADDRESSES.FLOW_FACTORY,
+            status: 'failed',
+            error: errorMessage
+          }
+        }))
+      }
+      throw new Error(errorMessage)
+    }
   }
 
   useEffect(() => {
-    if (hash && typeof window !== 'undefined') {
+    const currentHash = txHash || hash
+    if (currentHash && isSuccess && typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('payflow:transaction', {
         detail: {
-          hash,
-          type: 'flow_creation',
-          functionName,
-          to: CONTRACT_ADDRESSES.FLOW_FACTORY,
-          status: 'pending'
-        }
-      }))
-    }
-  }, [hash, functionName])
-
-  useEffect(() => {
-    if (hash && isSuccess && typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('payflow:transaction', {
-        detail: {
-          hash,
+          hash: currentHash,
           type: 'flow_creation',
           functionName,
           to: CONTRACT_ADDRESSES.FLOW_FACTORY,
@@ -129,10 +156,11 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
         }
       }))
     }
-  }, [hash, isSuccess, functionName])
+  }, [txHash, hash, isSuccess, functionName])
 
   useEffect(() => {
-    if (hash && error && typeof window !== 'undefined') {
+    const currentHash = txHash || hash
+    if (currentHash && error && typeof window !== 'undefined') {
       let errorMessage = 'Transaction failed'
       if (error && typeof error === 'object') {
         errorMessage = (error as any).message || (error as any).shortMessage || String(error)
@@ -141,7 +169,7 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
       }
       window.dispatchEvent(new CustomEvent('payflow:transaction', {
         detail: {
-          hash,
+          hash: currentHash,
           type: 'flow_creation',
           functionName,
           to: CONTRACT_ADDRESSES.FLOW_FACTORY,
@@ -150,11 +178,11 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
         }
       }))
     }
-  }, [hash, error, functionName])
+  }, [txHash, hash, error, functionName])
 
   return {
     createFlow,
-    hash,
+    hash: txHash || hash,
     isPending: isPending || isConfirming,
     isSuccess,
     error,
