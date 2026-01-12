@@ -244,9 +244,22 @@ export default function CreateFlowPage() {
                 <p className="text-sm text-destructive/80 mt-1">
                   {error?.message || deployError || 'Failed to create flow. Please try again.'}
                 </p>
-                {(error?.message || deployError)?.includes('reverted') && (
+                {((error?.message || deployError)?.includes('reverted') || 
+                  (error?.message || deployError)?.includes('Token approval failed')) && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs text-destructive/60">
+                      💡 Tip: Try creating the flow with <strong>0 deposit</strong> first, then add funds after creation.
+                    </p>
+                    {(error?.message || deployError)?.includes('not configured') && (
+                      <p className="text-xs text-destructive/60">
+                        ⚠️ Make sure your .env file has all required contract addresses configured.
+                      </p>
+                    )}
+                  </div>
+                )}
+                {(error?.message || deployError)?.includes('cancelled') && (
                   <p className="text-xs text-destructive/60 mt-2">
-                    💡 Tip: Try creating the flow with 0 deposit first, then add funds after creation.
+                    💡 Please approve the transaction in your wallet to continue.
                   </p>
                 )}
               </div>

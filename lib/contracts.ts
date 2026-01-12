@@ -7,6 +7,18 @@ export const CONTRACT_ADDRESSES = {
   MNEE_TOKEN: (process.env.NEXT_PUBLIC_MNEE_TOKEN_ADDRESS || '0x8ccedbAe4916b79da7F3F612EfB2EB93A2bFD6cF') as Address,
 }
 
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  const missing = []
+  if (!CONTRACT_ADDRESSES.FLOW_FACTORY) missing.push('NEXT_PUBLIC_FLOW_FACTORY_ADDRESS')
+  if (!CONTRACT_ADDRESSES.APPROVAL_MANAGER) missing.push('NEXT_PUBLIC_APPROVAL_MANAGER_ADDRESS')
+  if (!CONTRACT_ADDRESSES.MNEE_TOKEN) missing.push('NEXT_PUBLIC_MNEE_TOKEN_ADDRESS')
+  
+  if (missing.length > 0) {
+    console.warn('⚠️ Missing contract addresses in .env:', missing.join(', '))
+    console.warn('Please check your .env file and ensure all NEXT_PUBLIC_* addresses are set.')
+  }
+}
+
 export const areContractsDeployed = () => {
   return !!(
     CONTRACT_ADDRESSES.FLOW_FACTORY &&

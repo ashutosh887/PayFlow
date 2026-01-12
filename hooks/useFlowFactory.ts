@@ -18,27 +18,54 @@ async function ensureTokenApproval(
 ) {
   if (depositAmount === 0n) return
 
-  const { data: currentAllowance } = await refetchAllowance()
-  const allowanceAmount = (currentAllowance as bigint) || 0n
+  if (!CONTRACT_ADDRESSES.FLOW_FACTORY) {
+    throw new Error('FlowFactory address not configured. Please check your .env file.')
+  }
 
-  if (allowanceAmount < depositAmount) {
-    const approvalHash = await walletClient.writeContract({
-      account: address,
-      address: CONTRACT_ADDRESSES.MNEE_TOKEN,
-      abi: MNEE_TOKEN_ABI,
-      functionName: 'approve',
-      args: [CONTRACT_ADDRESSES.FLOW_FACTORY, maxUint256],
-    })
-    
-    await publicClient.waitForTransactionReceipt({ hash: approvalHash })
-    
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    const { data: updatedAllowance } = await refetchAllowance()
-    const updatedAmount = (updatedAllowance as bigint) || 0n
-    
-    if (updatedAmount < depositAmount) {
-      throw new Error('Token approval failed. Please try again.')
+  if (!CONTRACT_ADDRESSES.MNEE_TOKEN) {
+    throw new Error('MNEE Token address not configured. Please check your .env file.')
+  }
+
+  const currentAllowanceResult = await refetchAllowance()
+  const currentAllowance = (currentAllowanceResult?.data as bigint) || 0n
+
+  if (currentAllowance < depositAmount) {
+    try {
+      const approvalHash = await walletClient.writeContract({
+        account: address,
+        address: CONTRACT_ADDRESSES.MNEE_TOKEN,
+        abi: MNEE_TOKEN_ABI,
+        functionName: 'approve',
+        args: [CONTRACT_ADDRESSES.FLOW_FACTORY, maxUint256],
+      })
+      
+      const receipt = await publicClient.waitForTransactionReceipt({ 
+        hash: approvalHash,
+        timeout: 120_000
+      })
+
+      if (receipt.status === 'reverted') {
+        throw new Error('Approval transaction was reverted. Please check your token balance and try again.')
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      const updatedAllowance = await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.MNEE_TOKEN,
+        abi: MNEE_TOKEN_ABI,
+        functionName: 'allowance',
+        args: [address, CONTRACT_ADDRESSES.FLOW_FACTORY],
+      }) as bigint
+      
+      if (updatedAllowance < depositAmount) {
+        throw new Error(`Token approval failed. Expected at least ${depositAmount.toString()}, but got ${updatedAllowance.toString()}. Please try again.`)
+      }
+    } catch (err: any) {
+      const errorMessage = err?.message || err?.shortMessage || 'Token approval failed'
+      if (errorMessage.includes('user rejected') || errorMessage.includes('User rejected')) {
+        throw new Error('Approval was cancelled. Please approve the transaction to continue.')
+      }
+      throw new Error(errorMessage)
     }
   }
 }
