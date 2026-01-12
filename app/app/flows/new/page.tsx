@@ -149,10 +149,10 @@ export default function CreateFlowPage() {
       </div>
 
       <div className="pt-6 px-4">
-      {!showForm ? (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Choose a Template</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {!showForm ? (
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Choose a Template</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {templates.map((template) => {
               const IconComponent = template.icon
               return (
@@ -173,11 +173,10 @@ export default function CreateFlowPage() {
                 </Card>
               )
             })}
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="px-4">
-        <Card className="p-6 space-y-6">
+        ) : (
+          <Card className="p-6 space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold">
@@ -255,8 +254,7 @@ export default function CreateFlowPage() {
             )}
           </div>
         </Card>
-        </div>
-      )}
+        )}
       </div>
     </div>
   )
