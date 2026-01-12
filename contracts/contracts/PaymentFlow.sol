@@ -24,18 +24,16 @@ contract PaymentFlow is Ownable, ReentrancyGuard {
     FlowType public flowType;
     FlowStatus public status;
     IMNEE public mneeToken;
+    address public factory;
     
     uint256 public totalAmount;
     uint256 public remainingAmount;
     
     Milestone[] public milestones;
     Split[] public splits;
-    address[] public recipients;
     
     mapping(uint256 => bool) public milestoneCompleted;
-    mapping(address => uint256) public recipientAmounts;
 
-    event FlowCreated(uint256 indexed flowId, FlowType flowType, address owner, uint256 amount);
     event Deposit(address indexed depositor, uint256 amount);
     event MilestoneCompleted(uint256 indexed milestoneId);
     event PaymentExecuted(address indexed recipient, uint256 amount);
@@ -47,6 +45,7 @@ contract PaymentFlow is Ownable, ReentrancyGuard {
     constructor(address _mneeToken) Ownable(msg.sender) {
         mneeToken = IMNEE(_mneeToken);
         status = FlowStatus.Active;
+        factory = msg.sender;
     }
 
     function deposit(uint256 _amount) external nonReentrant {
@@ -65,6 +64,20 @@ contract PaymentFlow is Ownable, ReentrancyGuard {
         remainingAmount += actualAmount;
         
         emit Deposit(msg.sender, actualAmount);
+    }
+
+    function depositFromFactory(address _depositor, uint256 _amount) external {
+        require(msg.sender == factory, "Only factory can call");
+        require(status == FlowStatus.Active, "Flow not active");
+        require(_amount > 0, "Amount must be > 0");
+        
+        uint256 currentBalance = mneeToken.balanceOf(address(this));
+        require(currentBalance >= _amount, "Insufficient balance in flow");
+        
+        totalAmount += _amount;
+        remainingAmount += _amount;
+        
+        emit Deposit(_depositor, _amount);
     }
 
     function addMilestone(

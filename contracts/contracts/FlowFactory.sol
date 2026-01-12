@@ -28,79 +28,55 @@ contract FlowFactory is Ownable {
         approvalManager = ApprovalManager(_approvalManager);
     }
 
-    function createMilestoneFlow(
+    function _createFlow(
         address _mneeToken,
-        uint256 _initialDeposit
-    ) external returns (address) {
+        uint256 _initialDeposit,
+        uint256 _flowType
+    ) internal returns (address) {
         PaymentFlow newFlow = new PaymentFlow(_mneeToken);
         address flowAddress = address(newFlow);
         
         newFlow.transferOwnership(msg.sender);
         
         if (_initialDeposit > 0) {
+            uint256 balanceBefore = IMNEE(_mneeToken).balanceOf(flowAddress);
             require(
                 IMNEE(_mneeToken).transferFrom(msg.sender, flowAddress, _initialDeposit),
-                "Deposit failed"
+                "Deposit transfer failed"
             );
-            newFlow.deposit(_initialDeposit);
+            uint256 balanceAfter = IMNEE(_mneeToken).balanceOf(flowAddress);
+            require(balanceAfter - balanceBefore == _initialDeposit, "Deposit amount mismatch");
+            
+            newFlow.depositFromFactory(msg.sender, _initialDeposit);
         }
         
         flowsByOwner[msg.sender].push(flowAddress);
         isFlow[flowAddress] = true;
         allFlows.push(flowAddress);
         
-        emit FlowCreated(flowAddress, msg.sender, 0, _initialDeposit);
+        emit FlowCreated(flowAddress, msg.sender, _flowType, _initialDeposit);
         return flowAddress;
+    }
+
+    function createMilestoneFlow(
+        address _mneeToken,
+        uint256 _initialDeposit
+    ) external returns (address) {
+        return _createFlow(_mneeToken, _initialDeposit, 0);
     }
 
     function createSplitFlow(
         address _mneeToken,
         uint256 _initialDeposit
     ) external returns (address) {
-        PaymentFlow newFlow = new PaymentFlow(_mneeToken);
-        address flowAddress = address(newFlow);
-        
-        newFlow.transferOwnership(msg.sender);
-        
-        if (_initialDeposit > 0) {
-            require(
-                IMNEE(_mneeToken).transferFrom(msg.sender, flowAddress, _initialDeposit),
-                "Deposit failed"
-            );
-            newFlow.deposit(_initialDeposit);
-        }
-        
-        flowsByOwner[msg.sender].push(flowAddress);
-        isFlow[flowAddress] = true;
-        allFlows.push(flowAddress);
-        
-        emit FlowCreated(flowAddress, msg.sender, 1, _initialDeposit);
-        return flowAddress;
+        return _createFlow(_mneeToken, _initialDeposit, 1);
     }
 
     function createRecurringFlow(
         address _mneeToken,
         uint256 _initialDeposit
     ) external returns (address) {
-        PaymentFlow newFlow = new PaymentFlow(_mneeToken);
-        address flowAddress = address(newFlow);
-        
-        newFlow.transferOwnership(msg.sender);
-        
-        if (_initialDeposit > 0) {
-            require(
-                IMNEE(_mneeToken).transferFrom(msg.sender, flowAddress, _initialDeposit),
-                "Deposit failed"
-            );
-            newFlow.deposit(_initialDeposit);
-        }
-        
-        flowsByOwner[msg.sender].push(flowAddress);
-        isFlow[flowAddress] = true;
-        allFlows.push(flowAddress);
-        
-        emit FlowCreated(flowAddress, msg.sender, 2, _initialDeposit);
-        return flowAddress;
+        return _createFlow(_mneeToken, _initialDeposit, 2);
     }
 
     function getFlowsByOwner(address _owner) external view returns (address[] memory) {

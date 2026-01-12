@@ -1,6 +1,8 @@
 pragma solidity ^0.8.20;
 
-contract ApprovalManager {
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract ApprovalManager is Ownable {
     struct Approval {
         uint256 approvalId;
         address[] approvers;
@@ -8,6 +10,7 @@ contract ApprovalManager {
         mapping(address => bool) hasApproved;
         uint256 approvalCount;
         bool isApproved;
+        address creator;
     }
 
     mapping(uint256 => Approval) public approvals;
@@ -16,6 +19,8 @@ contract ApprovalManager {
     event ApprovalCreated(uint256 indexed approvalId, address[] approvers, uint256 requiredApprovals);
     event ApprovalGiven(uint256 indexed approvalId, address approver);
     event ApprovalThresholdMet(uint256 indexed approvalId);
+
+    constructor() Ownable(msg.sender) {}
 
     function createApproval(
         address[] memory _approvers,
@@ -32,6 +37,7 @@ contract ApprovalManager {
         approval.requiredApprovals = _requiredApprovals;
         approval.approvalCount = 0;
         approval.isApproved = false;
+        approval.creator = msg.sender;
 
         emit ApprovalCreated(approvalId, _approvers, _requiredApprovals);
         return approvalId;
@@ -81,6 +87,7 @@ contract ApprovalManager {
 
     function resetApproval(uint256 _approvalId) external {
         Approval storage approval = approvals[_approvalId];
+        require(approval.creator == msg.sender || msg.sender == owner(), "Not authorized");
         require(approval.isApproved, "Not approved yet");
         
         approval.approvalCount = 0;
