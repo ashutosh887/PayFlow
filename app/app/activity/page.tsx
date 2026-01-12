@@ -38,7 +38,7 @@ export default function ActivityPage() {
             id: `flow-${log.args.flowAddress}-${Date.now()}`,
             type: 'flow',
             title: 'Flow created',
-            description: `New ${log.args.flowType === 0n ? 'Milestone' : log.args.flowType === 1n ? 'Split' : 'Recurring'} flow created`,
+            description: `New ${Number(log.args.flowType) === 0 ? 'Milestone' : Number(log.args.flowType) === 1 ? 'Split' : 'Recurring'} flow created`,
             time: 'Just now',
             icon: Plus,
             status: 'completed',

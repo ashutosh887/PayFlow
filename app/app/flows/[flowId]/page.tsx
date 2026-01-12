@@ -111,8 +111,7 @@ export default function FlowDetailsPage({
           </Link>
           <h1 className="text-xl font-bold">Flow Details</h1>
         </div>
-        <div className="pt-6">
-          <div className="pt-6">
+        <div className="pt-6 px-4">
           <Card className="p-6">
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
