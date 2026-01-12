@@ -123,3 +123,22 @@
     @apply bg-background text-foreground;
     }
 }
+
+@layer base {
+  :root {
+    --rk-border-radius: var(--radius);
+  }
+  
+  .dark {
+    --rk-modal-background: oklch(0.21 0.006 285.885);
+    --rk-modal-text: oklch(0.985 0 0);
+    --rk-modal-border: oklch(1 0 0 / 10%);
+    
+    --rk-accent-color: oklch(0.92 0.004 286.32);
+    --rk-accent-color-foreground: oklch(0.21 0.006 285.885);
+    
+    --rk-action-button-border: oklch(1 0 0 / 10%);
+    --rk-action-button-background: oklch(0.274 0.006 286.033);
+    --rk-action-button-background-hover: oklch(0.32 0.006 286.033);
+  }
+}
