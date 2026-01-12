@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { useCreateMilestoneFlow, useCreateSplitFlow, useCreateRecurringFlow } from '@/hooks/useFlowFactory'
 import { useAccount } from 'wagmi'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -30,9 +30,18 @@ const templates = [
 export default function CreateFlowPage() {
   const { address, isConnected } = useAccount()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
   const [initialDeposit, setInitialDeposit] = useState('')
   const [showForm, setShowForm] = useState(false)
+
+  useEffect(() => {
+    const templateParam = searchParams.get('template')
+    if (templateParam && templates.some(t => t.id === templateParam)) {
+      setSelectedTemplate(templateParam)
+      setShowForm(true)
+    }
+  }, [searchParams])
 
   const {
     createFlow: createMilestoneFlow,
