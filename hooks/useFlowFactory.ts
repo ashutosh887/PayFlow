@@ -69,9 +69,34 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
       throw new Error('Public client not available')
     }
 
-    const depositAmount = initialDeposit ? parseUnits(initialDeposit, 18) : 0n
+    const trimmedDeposit = (initialDeposit || '').trim()
+    let depositAmount = 0n
     
-    await ensureTokenApproval(depositAmount, address, walletClient, publicClient, refetchAllowance)
+    if (trimmedDeposit && trimmedDeposit !== '0' && trimmedDeposit !== '0.0' && trimmedDeposit !== '0.00') {
+      try {
+        depositAmount = parseUnits(trimmedDeposit, 18)
+      } catch (error) {
+        console.error('Error parsing deposit amount:', error, 'Input:', trimmedDeposit)
+        throw new Error(`Invalid deposit amount: ${trimmedDeposit}. Please enter a valid number.`)
+      }
+    }
+    
+    console.log('Creating flow with deposit:', {
+      input: initialDeposit,
+      trimmed: trimmedDeposit,
+      parsed: depositAmount.toString(),
+      hex: depositAmount.toString(16)
+    })
+    
+    if (depositAmount > 0n) {
+      await ensureTokenApproval(depositAmount, address, walletClient, publicClient, refetchAllowance)
+    }
+    
+    console.log('Calling writeContract with:', {
+      functionName,
+      mneeToken: CONTRACT_ADDRESSES.MNEE_TOKEN,
+      depositAmount: depositAmount.toString(),
+    })
     
     writeContract({
       address: CONTRACT_ADDRESSES.FLOW_FACTORY,
