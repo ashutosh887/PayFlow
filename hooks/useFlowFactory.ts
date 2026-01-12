@@ -9,67 +9,6 @@ import type { Address } from 'viem'
 
 type FlowFunctionName = 'createMilestoneFlow' | 'createSplitFlow' | 'createRecurringFlow'
 
-async function ensureTokenApproval(
-  depositAmount: bigint,
-  address: Address,
-  walletClient: any,
-  publicClient: any,
-  refetchAllowance: () => Promise<any>
-) {
-  if (depositAmount === 0n) return
-
-  if (!CONTRACT_ADDRESSES.FLOW_FACTORY) {
-    throw new Error('FlowFactory address not configured. Please check your .env file.')
-  }
-
-  if (!CONTRACT_ADDRESSES.MNEE_TOKEN) {
-    throw new Error('MNEE Token address not configured. Please check your .env file.')
-  }
-
-  const currentAllowanceResult = await refetchAllowance()
-  const currentAllowance = (currentAllowanceResult?.data as bigint) || 0n
-
-  if (currentAllowance < depositAmount) {
-    try {
-      const approvalHash = await walletClient.writeContract({
-        account: address,
-        address: CONTRACT_ADDRESSES.MNEE_TOKEN,
-        abi: MNEE_TOKEN_ABI,
-        functionName: 'approve',
-        args: [CONTRACT_ADDRESSES.FLOW_FACTORY, maxUint256],
-      })
-      
-      const receipt = await publicClient.waitForTransactionReceipt({ 
-        hash: approvalHash,
-        timeout: 120_000
-      })
-
-      if (receipt.status === 'reverted') {
-        throw new Error('Approval transaction was reverted. Please check your token balance and try again.')
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      const updatedAllowance = await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.MNEE_TOKEN,
-        abi: MNEE_TOKEN_ABI,
-        functionName: 'allowance',
-        args: [address, CONTRACT_ADDRESSES.FLOW_FACTORY],
-      }) as bigint
-      
-      if (updatedAllowance < depositAmount) {
-        throw new Error(`Token approval failed. Expected at least ${depositAmount.toString()}, but got ${updatedAllowance.toString()}. Please try again.`)
-      }
-    } catch (err: any) {
-      const errorMessage = err?.message || err?.shortMessage || 'Token approval failed'
-      if (errorMessage.includes('user rejected') || errorMessage.includes('User rejected')) {
-        throw new Error('Approval was cancelled. Please approve the transaction to continue.')
-      }
-      throw new Error(errorMessage)
-    }
-  }
-}
-
 function useCreateFlowBase(functionName: FlowFunctionName) {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
@@ -78,6 +17,11 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
   const { writeContract, data: hash, isPending, error } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash || hash,
+  })
+
+  const { writeContract: writeApproval, data: approvalHash, isPending: isApprovalPending, error: approvalError } = useWriteContract()
+  const { isLoading: isApprovalConfirming, isSuccess: isApprovalSuccess } = useWaitForTransactionReceipt({
+    hash: approvalHash,
   })
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
@@ -90,6 +34,42 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
     },
   })
 
+  const [needsApproval, setNeedsApproval] = useState(false)
+  const [pendingDeposit, setPendingDeposit] = useState<bigint | null>(null)
+
+  useEffect(() => {
+    const createFlowAfterApproval = async () => {
+      if (!isApprovalSuccess || !approvalHash || !pendingDeposit || !walletClient || !address || !publicClient) return
+      
+      try {
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        const { data: updatedAllowance } = await refetchAllowance()
+        const updatedAmount = (updatedAllowance as bigint) || 0n
+        
+        if (updatedAmount >= pendingDeposit) {
+          const flowHash = await walletClient.writeContract({
+            account: address,
+            address: CONTRACT_ADDRESSES.FLOW_FACTORY,
+            abi: FLOW_FACTORY_ABI,
+            functionName,
+            args: [CONTRACT_ADDRESSES.MNEE_TOKEN, pendingDeposit],
+            gas: 3000000n,
+          })
+          setTxHash(flowHash)
+          setPendingDeposit(null)
+          setNeedsApproval(false)
+        }
+      } catch (err: any) {
+        console.error('Failed to create flow after approval:', err)
+        setPendingDeposit(null)
+        setNeedsApproval(false)
+      }
+    }
+    
+    createFlowAfterApproval()
+  }, [isApprovalSuccess, approvalHash, pendingDeposit, walletClient, address, publicClient, functionName, refetchAllowance])
+
   const createFlow = async (initialDeposit: string) => {
     if (!CONTRACT_ADDRESSES.FLOW_FACTORY) {
       throw new Error('FlowFactory address not configured')
@@ -97,10 +77,6 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
 
     if (!address) {
       throw new Error('Wallet not connected')
-    }
-
-    if (!walletClient) {
-      throw new Error('Wallet client not available')
     }
 
     if (!publicClient) {
@@ -119,7 +95,22 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
     }
     
     if (depositAmount > 0n) {
-      await ensureTokenApproval(depositAmount, address, walletClient, publicClient, refetchAllowance)
+      const currentAllowance = (allowance as bigint) || 0n
+      if (currentAllowance < depositAmount) {
+        setPendingDeposit(depositAmount)
+        setNeedsApproval(true)
+        writeApproval({
+          address: CONTRACT_ADDRESSES.MNEE_TOKEN,
+          abi: MNEE_TOKEN_ABI,
+          functionName: 'approve',
+          args: [CONTRACT_ADDRESSES.FLOW_FACTORY, maxUint256],
+        })
+        return
+      }
+    }
+    
+    if (!walletClient) {
+      throw new Error('Wallet client not available')
     }
     
     let txHash: `0x${string}` | null = null
@@ -207,12 +198,19 @@ function useCreateFlowBase(functionName: FlowFunctionName) {
     }
   }, [txHash, hash, error, functionName])
 
+  useEffect(() => {
+    if (approvalError) {
+      setNeedsApproval(false)
+      setPendingDeposit(null)
+    }
+  }, [approvalError])
+
   return {
     createFlow,
     hash: txHash || hash,
-    isPending: isPending || isConfirming,
+    isPending: isPending || isConfirming || isApprovalPending || isApprovalConfirming || needsApproval,
     isSuccess,
-    error,
+    error: error || approvalError,
   }
 }
 
