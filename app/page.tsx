@@ -70,7 +70,7 @@ export default function Home() {
                 {config.appDescription}
               </span>
 
-              <span className="block text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-amber-600">
+              <span className="block text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-linear-to-br from-amber-400 to-amber-600">
                 {config.appDescriptionSuffix}
               </span>
             </h1>
