@@ -20,24 +20,17 @@ export function useCreateMilestoneFlow() {
 
     // First approve the token transfer if deposit > 0
     if (depositAmount > 0n) {
-      const approveHash = await writeContract({
+      writeContract({
         address: CONTRACT_ADDRESSES.MNEE_TOKEN,
         abi: MNEE_TOKEN_ABI,
         functionName: 'approve',
         args: [CONTRACT_ADDRESSES.FLOW_FACTORY, depositAmount],
       })
       
-      // Wait for approval to be confirmed before creating flow
-      if (approveHash) {
-        await new Promise((resolve) => {
-          const checkInterval = setInterval(() => {
-            // In a real app, you'd wait for the transaction receipt
-            // For now, we'll just wait a bit
-            clearInterval(checkInterval)
-            resolve(undefined)
-          }, 1000)
-        })
-      }
+      // Wait a bit for approval to be processed
+      await new Promise((resolve) => {
+        setTimeout(resolve, 2000)
+      })
     }
 
     // Then create the flow
@@ -72,18 +65,16 @@ export function useCreateSplitFlow() {
     const depositAmount = initialDeposit ? parseUnits(initialDeposit, 18) : 0n
 
     if (depositAmount > 0n) {
-      const approveHash = await writeContract({
+      writeContract({
         address: CONTRACT_ADDRESSES.MNEE_TOKEN,
         abi: MNEE_TOKEN_ABI,
         functionName: 'approve',
         args: [CONTRACT_ADDRESSES.FLOW_FACTORY, depositAmount],
       })
       
-      if (approveHash) {
-        await new Promise((resolve) => {
-          setTimeout(resolve, 1000)
-        })
-      }
+      await new Promise((resolve) => {
+        setTimeout(resolve, 2000)
+      })
     }
 
     writeContract({
@@ -117,18 +108,16 @@ export function useCreateRecurringFlow() {
     const depositAmount = initialDeposit ? parseUnits(initialDeposit, 18) : 0n
 
     if (depositAmount > 0n) {
-      const approveHash = await writeContract({
+      writeContract({
         address: CONTRACT_ADDRESSES.MNEE_TOKEN,
         abi: MNEE_TOKEN_ABI,
         functionName: 'approve',
         args: [CONTRACT_ADDRESSES.FLOW_FACTORY, depositAmount],
       })
       
-      if (approveHash) {
-        await new Promise((resolve) => {
-          setTimeout(resolve, 1000)
-        })
-      }
+      await new Promise((resolve) => {
+        setTimeout(resolve, 2000)
+      })
     }
 
     writeContract({
